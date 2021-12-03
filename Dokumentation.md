@@ -9,7 +9,7 @@
 1. LEN (a)
 2. NP (1 bit) + *Reserved* (3 bit) + ADC-Flag (1 bit) + Protokoll (3 bit) (b)
 3. PS (4 bit) + ComEn (4 bit)
-4. Data0 ... DataN
+4. Data0 ... DataN (je 2 Byte)
 5. (CRC)
 
 ### Sonderpakete
@@ -19,8 +19,21 @@
 4. String (ASCII String)
 5. (CRC)
         
-        
-        
+## Payload der Module
+### ODC
+5 Sensoren / Data0 ... Data4 / 10 Bytes
+1. Lage (normalisiert bzw. ohne Einheit)
+2. Lage (Winkelgrad)
+3. Fototransistor
+4. IMU + Kompass
+5. (Sonstiges)
+
+### TMS
+6 Temperatursensoren / Data0 ... Data5 / 12 Bytes
+
+### EPM
+4 - 5 Stromsensoren / Data0 ... Data3-4 / 8 - 10 Bytes
+
 #
 (a)
 LEN = Anzahl aller Bytes, inkl. LEN und CRC, außer Null-Byte im Sonderpaket
