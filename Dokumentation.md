@@ -3,8 +3,6 @@
 ## SPI RFC-MCU Übersicht
 - MCU Master
 - RFC Slave
-- In welchen Intervallen sendet die MCU am Anfang? Wie wird anfängliche Frequenz 
-- Am Anfang Frequenzen für Module senden
 
 ## Datenpakete
 ### Standard
@@ -41,3 +39,11 @@ LEN = Anzahl aller Bytes, inkl. LEN und CRC, außer Null-Byte im Sonderpaket
 - E = Error (String optional)
 - I = Intervallmessung setzen (String: Tabellenplatz | Periode (1-255 bzw. 100ms - 25,5s) | String (Standardpaket))
 - S = Start (kein String)
+
+
+
+## Offene Fragen
+- In welchen Intervallen sendet die MCU am Anfang? Wie wird anfängliche Frequenz für jeweilige Module festgelegt?
+- Am Anfang Frequenzen für Module senden
+- Wie bestätigt RFC der MCU (und andersrum) richtige/falsche Übertragung? (extra Pin? extra Nachricht?)
+- Metainfo für Module An-/Abschalten
