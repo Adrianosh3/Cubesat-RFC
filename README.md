@@ -10,6 +10,7 @@ Adrian:
 
 Immi:
 - Send and receive function for every module!
+- AvPin auf 1 setzen, wenn RFC rechnet, danach wieder auf 0
 ___________________________________________________
 
 
