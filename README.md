@@ -4,11 +4,11 @@ ___________________________________________________
 
 Adrian:
 - Path for 5 measurements per module!
-- initialization function (frequency setter when initilized)
 - Module setter for request frequency (in sec)
 
 Immi:
-- Send and receive function for every module!
+- Send and receive function for every module
+- initialization function (frequency setter when initilized)
 - AvPin auf 1 setzen, wenn RFC rechnet, danach wieder auf 0
 ___________________________________________________
 
