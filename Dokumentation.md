@@ -55,7 +55,7 @@ LEN = Anzahl aller Bytes, inkl. LEN und CRC, außer Null-Byte im Sonderpaket
 
 
 
-## Offene Fragen
+## Offene Fragen/Themen
 - In welchen Intervallen sendet die MCU am Anfang? Wie wird anfängliche Frequenz für jeweilige Module festgelegt?
 - Am Anfang Frequenzen für Module senden
 - Wie bestätigt RFC der MCU (und andersrum) richtige/falsche Übertragung? (extra Pin? extra Nachricht?)
