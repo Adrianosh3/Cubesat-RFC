@@ -1,5 +1,5 @@
 //===============================================================
-// @file:     GroundControl_V0.1
+// @file:     GroundControl_V0.7
 // @brief:    Communication CubeSat - Ground Control
 //
 // @authors:  Adrian Setka, Immanuel Weule
@@ -15,7 +15,7 @@
 //            https://randomnerdtutorials.com/esp32-esp8266-input-data-html-form/
 //
 //            https://diyprojects.io/esp8266-web-server-part-1-store-web-interface-spiffs-area-html-css-js/#.YOxFhxOA5eg
-//            
+//
 //            https://techtutorialsx.com/2019/06/13/esp8266-spiffs-appending-content-to-file/
 //===============================================================
 
@@ -40,16 +40,20 @@
 #include <ESP32DMASPIMaster.h>
 
 //Set WiFi SSID and password
-// const char* ssid = "Kewwin_02"; //WiFi SSID
-// const char* password = "2214934027604276"; //WiFi password
-const char* ssid = "Apartment 322"; //WiFi SSID
-const char* password = "06456469822825645048"; //WiFi password
+//const char* ssid = "Kewwin_02"; //WiFi SSID
+//const char* password = "2214934027604276"; //WiFi password
+//const char* ssid = "Apartment 322"; //WiFi SSID
+//const char* password = "06456469822825645048"; //WiFi password
+
+//For Wi-Fi hotspot
+//const char* ssid = "demosat"; //WiFi SSID
+//const char* password = "123456789"; //WiFi password
 
 const char* http_username = "admin";  // username for login
 const char* http_password = "admin";  // password for login
 
 const char* PARAM_COMMAND1 = "inCommand1"; //Variable for commandline SPIFFS file
-const char* PARAM_COMMAND2 = "inCommand2"; // Variables for last commands 
+const char* PARAM_COMMAND2 = "inCommand2"; // Variables for last commands
 const char* PARAM_COMMAND3 = "inCommand3";
 const char* PARAM_COMMAND4 = "inCommand4";
 const char* PARAM_COMMAND5 = "inCommand5";
@@ -85,9 +89,9 @@ String conf2 = "";
 String conf3 = "";
 String conf4 = "";
 String EPM1, EPM2, EPM3, EPM4;
-String TMS1 = "50"; 
+String TMS1 = "50";
 String TMS2 = "100";
-String TMS3 = "200"; 
+String TMS3 = "200";
 String TMS4 = "300";
 String ODC1, ODC2, ODC3, ODC4, ODC5, ODC6, ODC7;
 String PAY1, PAY2, PAY3, PAY4;
@@ -108,24 +112,28 @@ Adafruit_BMP280 bmp; //I2C sensor connection of BMP280 modul
 
 ESP32DMASPI::Master master;
 
-static const uint32_t BUFFER_SIZE = 8;
+static const uint32_t BUFFER_SIZE = 16;
 const int MCU_Av = 17;  //Set to Pin number, which will be used for MCU Availability
-uint8_t* spi_master_tx_buf;
+uint8_t* spi_master_tx_buf; //Is declared in funtion "spi(...)" as parameter
 uint8_t* spi_master_rx_buf;
+uint8_t spiMessageTx[16];
 
 uint8_t spiLength=0;  //First (spi_master_rx_buf[0]) byte of spi message
-String spiAddress; //Second (...[1]) and third (...[2]) byte 
+String spiAddress; //Second (...[1]) and third (...[2]) byte
 uint8_t spiNextPack=0; //Fourth (...[3]) byte
 String spiPayload1; //Fifth (...[4]) to sixth (...[5]) byte
-String spiPayload2; //Fifth (...[6]) to sixth (...[5]) byte
-String spiPayload3; //Fifth (...[8]) to sixth (...[5]) byte
-String spiPayload4; //Fifth (...[9]) to sixth (...[5]) byte
+String spiPayload2;
+String spiPayload3;
+String spiPayload4;
+String spiPayload5;
+String spiPayload6;
+String spiPayload7;
 uint8_t spiCRC=0; //Last (...[4+spiLength+1]) byte
 uint8_t buff;
 uint8_t counterSpi=0;
 uint8_t transactionNbr=1;
 
-uint8_t asdf=0;
+uint8_t t_switch_payload=0;
 
 //Change length of array AND mcu_load_size, if mcu status should be tracked over a longer period of time
 uint8_t mcu_log[20];
@@ -142,16 +150,16 @@ String testData = "";
 void ConnectToWiFi() {
   Serial.println("Connecting to ");
   Serial.print(ssid);
-  
+
   WiFi.disconnect();
   WiFi.begin(ssid, password); //For ESP as a station; for ESP as AP use "WiFi.softAP(ssid, password)"
 
   //Wait for WiFi to connect
-  while(WiFi.waitForConnectResult() != WL_CONNECTED){      
+  while(WiFi.waitForConnectResult() != WL_CONNECTED){
       Serial.print(".");
       delay(100);
   }
-    
+
   //If connection is successful show IP address in serial monitor
   Serial.println("");
   Serial.print("Connected to ");
@@ -197,7 +205,7 @@ void writeFile(fs::FS &fs, const char * path, const char * message){
   }
   f.close();
 }
-      
+
 void writeConfig(String ident) {
   String ce = (readFile(SPIFFS, ("/ce" + ident + ".txt").c_str()));
   String ps = (readFile(SPIFFS, ("/ps" + ident + ".txt").c_str()));
@@ -214,11 +222,11 @@ void sendCommand() {
   return;
 }
 
-String receiveData(String compareConfig, String data1, String data2, String data3, String data4) {
+String receiveData(String compareConfig, String data1, String data2, String data3, String data4, String data5, String data6, String data7) {
   // decide wich configuration and update global variables of that module
     if ( conf1 == compareConfig) {
       // EPM
-      
+
       EPM1 = data1;
       EPM2 = data2;
       EPM3 = data3;
@@ -228,7 +236,7 @@ String receiveData(String compareConfig, String data1, String data2, String data
       return conf1;
     } else if (conf2 == compareConfig) {
       // ODC
-      
+
       ODC1 = data1;
       ODC2 = data2;
       ODC3 = data3;
@@ -238,12 +246,12 @@ String receiveData(String compareConfig, String data1, String data2, String data
       return conf2;
     } else if (conf3 == compareConfig) {
       //TMS
-      
+
       TMS1 = data1;
       TMS2 = data2;
       TMS3 = data3;
       TMS4 = data4;
-    
+
       printf("\nHat funktioniert.\ndat: %s\ncompareConfig: %s\nconf3: %s\n", data1, compareConfig, conf3);
       return conf3;
     } else if (conf4 == compareConfig) {
@@ -261,7 +269,9 @@ String receiveData(String compareConfig, String data1, String data2, String data
     }
 }
 
-void spi(void){
+void spi(uint8_t* spi_param){
+    spi_master_tx_buf = spi_param;
+
     master.transfer(spi_master_tx_buf, spi_master_rx_buf, BUFFER_SIZE);
 
     spiLength=spi_master_rx_buf[0];
@@ -270,16 +280,24 @@ void spi(void){
 
     spiPayload1=String(spi_master_rx_buf[3]);
     spiPayload1+=String(spi_master_rx_buf[4]);
-    
-    
+
     spiPayload2=String(spi_master_rx_buf[5]);
     spiPayload2+=String(spi_master_rx_buf[6]);
-    
+
     spiPayload3=String(spi_master_rx_buf[7]);
     spiPayload3+=String(spi_master_rx_buf[8]);
-    
+
     spiPayload4=String(spi_master_rx_buf[9]);
     spiPayload4+=String(spi_master_rx_buf[10]);
+
+    spiPayload5=String(spi_master_rx_buf[11]);
+    spiPayload5+=String(spi_master_rx_buf[12]);
+
+    spiPayload6=String(spi_master_rx_buf[13]);
+    spiPayload6+=String(spi_master_rx_buf[14]);
+
+    spiPayload7=String(spi_master_rx_buf[15]);
+    spiPayload7+=String(spi_master_rx_buf[16]);
 
     spiCRC=spi_master_rx_buf[2+spiLength+1];
 
@@ -287,32 +305,32 @@ void spi(void){
     //spiPayload="200";
 
     //switch spiPayload
-    switch(asdf){
+    switch(t_switch_payload){
       case 0:
       //spiAddress="11";
       spiPayload1="50";
-      asdf++;
+      t_switch_payload++;
       break;
       case 1:
       //spiAddress="22";
       spiPayload1="100";
-      asdf++;
+      t_switch_payload++;
       break;
       case 2:
       //spiAddress="33";
       spiPayload1="150";
-      asdf++;
+      t_switch_payload++;
       break;
       case 3:
       //spiAddress="44";
       spiPayload1="200";
-      asdf=0;
-      break;      
+      t_switch_payload=0;
+      break;
     }
 
     printf("\nTransaction Nbr: %d", transactionNbr);
     transactionNbr++;
-    
+
     printf("\nReceived:");
     //Show received data (if needed)
     for (uint8_t i = 0; i < BUFFER_SIZE; ++i)
@@ -327,9 +345,8 @@ void spi(void){
 
     printf("Payload: %s\nspiAddress: %s\n", spiPayload1, spiAddress);
 
-    receiveData(spiAddress, spiPayload1, spiPayload2, spiPayload3, spiPayload4);
+    receiveData(spiAddress, spiPayload1, spiPayload2, spiPayload3, spiPayload4, spiPayload5, spiPayload6, spiPayload7);
 
-    switchTxData(); //Only for test purposes to simulate different messages
 /*
     //Dispense payload to correct function for further proceeding
     if(spi_master_rx_buf[1]==ce_odc && spi_master_rx_buf[2]==ps_epm)  //epm
@@ -366,50 +383,73 @@ void mcuLoad(uint8_t actualStatus){
 
   mcu_load=String(sum*100/mcu_log_size);
 
-  //printf("\n sum:%d mcuLoad: %s\n", mcu_load);    //phne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
+  //printf("\n sum:%d mcuLoad: %s\n", mcu_load);    //ohne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
 
   printf("\n mcuLoad: %s\n", mcu_load);
 
 }
 
-void switchTxData()
+void t_switchTxData()
 {
   switch (counterSpi)
   {
     case 0:
-    spi_master_tx_buf[0]=0;
-    spi_master_tx_buf[1]=0;
-    spi_master_tx_buf[2]=0;
-    spi_master_tx_buf[3]=1;
-    spi_master_tx_buf[4]=0;
-    spi_master_tx_buf[5]=0;
-    spi_master_tx_buf[6]=0;
-    spi_master_tx_buf[7]=1;
+    spiMessageTx[0]=0;
+    spiMessageTx[1]=0;
+    spiMessageTx[2]=0;
+    spiMessageTx[3]=1;
+    spiMessageTx[4]=0;
+    spiMessageTx[5]=0;
+    spiMessageTx[6]=0;
+    spiMessageTx[7]=1;
+    spiMessageTx[8]=0;
+    spiMessageTx[9]=0;
+    spiMessageTx[10]=0;
+    spiMessageTx[11]=1;
+    spiMessageTx[12]=0;
+    spiMessageTx[13]=0;
+    spiMessageTx[14]=0;
+    spiMessageTx[15]=1;
     counterSpi++;
     break;
     case 1:
-    spi_master_tx_buf[0]=1;
-    spi_master_tx_buf[1]=0;
-    spi_master_tx_buf[2]=2;
-    spi_master_tx_buf[3]=4;
-    spi_master_tx_buf[4]=1;
-    spi_master_tx_buf[5]=0;
-    spi_master_tx_buf[6]=2;
-    spi_master_tx_buf[7]=4;
+    spiMessageTx[0]=1;
+    spiMessageTx[1]=0;
+    spiMessageTx[2]=2;
+    spiMessageTx[3]=4;
+    spiMessageTx[4]=1;
+    spiMessageTx[5]=0;
+    spiMessageTx[6]=2;
+    spiMessageTx[7]=4;
+    spiMessageTx[8]=1;
+    spiMessageTx[9]=0;
+    spiMessageTx[10]=2;
+    spiMessageTx[11]=4;
+    spiMessageTx[12]=1;
+    spiMessageTx[13]=0;
+    spiMessageTx[14]=2;
+    spiMessageTx[15]=4;
     counterSpi=0;
     break;
     default:
-    spi_master_tx_buf[0]=7;
-    spi_master_tx_buf[1]=7;
-    spi_master_tx_buf[2]=7;
-    spi_master_tx_buf[3]=7;
-    spi_master_tx_buf[4]=7;
-    spi_master_tx_buf[5]=7;
-    spi_master_tx_buf[6]=7;
-    spi_master_tx_buf[7]=7;
+    spiMessageTx[0]=7;
+    spiMessageTx[1]=7;
+    spiMessageTx[2]=7;
+    spiMessageTx[3]=7;
+    spiMessageTx[4]=7;
+    spiMessageTx[5]=7;
+    spiMessageTx[6]=7;
+    spiMessageTx[7]=7;
+    spiMessageTx[8]=7;
+    spiMessageTx[9]=7;
+    spiMessageTx[10]=7;
+    spiMessageTx[11]=7;
+    spiMessageTx[12]=7;
+    spiMessageTx[13]=7;
+    spiMessageTx[14]=7;
+    spiMessageTx[15]=7;
     counterSpi=0;
-    
-  }
+    }
 }
 
 void set_buffer() {
@@ -431,7 +471,7 @@ String readBMP280Temperature() {
   float temp = bmp.readTemperature();
   // Convert temperature to Fahrenheit
   //t = 1.8 * t + 32;
-  if (isnan(temp)) {    
+  if (isnan(temp)) {
     Serial.println("Failed to read temp from BMP280 sensor!");
     return "";
   }
@@ -481,7 +521,7 @@ String readBMP280Pressure() {
 //===============================================================
 
 void setup(void){
-  
+
   Serial.begin(115200); //Open a serial connection
   Serial.println("Booting...");
 
@@ -489,13 +529,13 @@ void setup(void){
     Serial.println("Could not find a valid BME280 sensor, check wiring!");
     //while (1) delay(10);
   }
-  
+
   //Initialize SPIFFS
   if(!SPIFFS.begin(true)){
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
-  
+
   // Header for SPIFFS Files
   const char* header1 = "Log File Temperature\n";
   const char* header2 = "Log File Altitude\n";
@@ -503,14 +543,14 @@ void setup(void){
   writeFile(SPIFFS, "/logT.txt", header1);
   writeFile(SPIFFS, "/logA.txt", header2);
   writeFile(SPIFFS, "/logP.txt", header3);
-  
+
   writeFile(SPIFFS, "/inCommand1.txt", "Booting...");
   writeFile(SPIFFS, "/inCommand2.txt", " ");
   writeFile(SPIFFS, "/inCommand3.txt", " ");
   writeFile(SPIFFS, "/inCommand4.txt", " ");
   writeFile(SPIFFS, "/inCommand5.txt", " ");
-  
-  
+
+
   //Initialize how ESP should act - AP or STA (comment out one initialization)
   //WiFi.mode(WIFI_AP); //Access point mode: stations can connect to the ESP
   WiFi.mode(WIFI_STA); //Station mode: the ESP connects to an access point
@@ -526,43 +566,43 @@ void setup(void){
   }
 
   set_buffer();
-  pinMode(MCU_Av, INPUT);    
+  pinMode(MCU_Av, INPUT);
   delay(5000);
   master.setDataMode(SPI_MODE3);
   master.setFrequency(1000000);
   master.setMaxTransferSize(BUFFER_SIZE);
   master.setDMAChannel(2);  // 1 or 2 only
   master.setQueueSize(1);   // transaction queue size
-    
+
   master.begin();  // default SPI is HSPI
-  
+
   if(!MDNS.begin("cubesat")) {  //Argument of MDNS.begin holds website name (".local" has to be added)
      Serial.println("Error starting mDNS");
      return;
   }
-  
+
   //Handle Web Server
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     if(!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
     request->send(SPIFFS, "/index.html", String(), false);
   });
-  
+
   server.on("/workload", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", mcu_load.c_str());
   });
-  
+
   server.on("/epmValue1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Temperature().c_str());
   });
   server.on("/epmValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Altitude().c_str());
   });
-  
+
   server.on("/epmValue3", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Pressure().c_str());
   });
-  
+
   server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC2.c_str());
   });
@@ -581,8 +621,8 @@ void setup(void){
   server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC7.c_str());
   });
-  
-  
+
+
   // Test purpose TMS
   server.on("/tmsValue1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", TMS1.c_str());
@@ -597,9 +637,9 @@ void setup(void){
     request->send_P(200, "text/plain", TMS4.c_str());
   });
 
-  
 
-  
+
+
   //Commands
   server.on("/command1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/inCommand1.txt", "text/text");
@@ -690,16 +730,16 @@ void setup(void){
 
         inputMessage = request->getParam(("CE" + (String)arr2[i]).c_str())->value();
         writeFile(SPIFFS, ("/ce" + (String)arr[i] + ".txt").c_str(), inputMessage.c_str());
-  
+
         inputMessage = request->getParam(("PS" + (String)arr2[i]).c_str())->value();
         writeFile(SPIFFS, ("/ps" + (String)arr[i] + ".txt").c_str(), inputMessage.c_str());
-  
+
         inputMessage = request->getParam(("API" + (String)arr2[i]).c_str())->value();
         writeFile(SPIFFS, ("/api" + (String)arr[i] + ".txt").c_str(), inputMessage.c_str());
       }
-            
+
       for (int i = 0; i < 4; i++) {
-        writeConfig(arr[i]); 
+        writeConfig(arr[i]);
       }
       conf1 = readFile(SPIFFS, ("/config" + String(arr[0]) + ".txt").c_str());
       conf2 = readFile(SPIFFS, ("/config" + String(arr[1]) + ".txt").c_str());
@@ -710,14 +750,14 @@ void setup(void){
       String message = "";
       inputMessage = request->getParam(M1on)->value();
       message = conf1 + inputMessage;
-      Serial.print(message);  
+      Serial.print(message);
     }
     else if (request->hasParam(M1off)) {
       String message = "";
       inputMessage = request->getParam(M1on)->value();
       message = conf1 + inputMessage;
       Serial.print(message);
-      
+
     }
     else {
       inputMessage = "No message sent";
@@ -725,7 +765,7 @@ void setup(void){
     request->send(200, "text/text", inputMessage);
   });
 
-  
+
   server.onNotFound(notFound);
   server.begin();
 }
@@ -748,17 +788,18 @@ void loop(void){
   } else {
     counter++;
   }
-  
+
   //Only use SPI if MCU is available
-  if(digitalRead(MCU_Av)==0)  
+  if(digitalRead(MCU_Av)==0)
   {
-    spi();
+    spi(spiMessageTx);
+    t_switchTxData(); //Only for test purposes to simulate different messages
     mcuLoad(0);
   }else{
     mcuLoad(1);
   }
   Serial.println("1");
-  //To access your stored values 
+  //To access your stored values
   // readFile(SPIFFS, "/configEPM.txt");
 
   delay(5000);
