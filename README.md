@@ -3,7 +3,6 @@ ___________________________________________________
 <ins>To do:</ins>
 
 Adrian:
-- Initialisierungstabelle für Anschlussart!
 - Path for 5 measurements per module!
 - initialization function (frequency setter when initilized)
 - Module setter for request frequency (in sec)
@@ -27,6 +26,7 @@ ___________________________________________________
 
 ___________________________________________________
 <ins>Done:</ins>
+- Initialisierungstabelle für Anschlussart!
 - Log files for sensordata with timestamp
 - Login
 - Website working with AsynchronServer
