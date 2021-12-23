@@ -35,6 +35,8 @@
 #include <ESPmDNS.h>  //For URL/name instead of IP address
 #include <analogWrite.h>
 #include <TimeLib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <ESP32DMASPISlave.h>
@@ -114,10 +116,11 @@ ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave;
 
 static const uint32_t BUFFER_SIZE = 16;
 const int RFC_Av = 17;  //Set to Pin number, which will be used for MCU Availability
-uint8_t* spi_slave_tx_buf; //Is declared in funtion "spi(...)" as parameter
+uint8_t* spi_slave_tx_buf; //Is declared in function "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
 uint8_t spiMessageTx_T[16];
-String spiMessageTx = "";
+const char* spiMessageTx_s = "";
+uint8_t* spiMessageTx;
 uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
 uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
 String spiAddress=""; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
@@ -760,7 +763,14 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
-      spiMessageTx = readFile(SPIFFS, ("/inCommand1.txt"));
+      spiMessageTx_s = (readFile(SPIFFS, ("/inCommand1.txt"))).c_str();
+
+      //cast spiMessageTx_s to spiMessageTx (from String to uint8_t)
+      //char qwer[256] = spiMessageTx_s.c_str();
+      
+      int asdf = (int) spiMessageTx_s;
+      uint8_t qwer = (uint8_t) asdf;
+      spiMessageTx = &qwer;
     }
     else if (request->hasParam(TEST)) {
       inputMessage = request->getParam(PARAM_COMMAND1)->value();
@@ -830,6 +840,8 @@ void loop(void){
   } else {
     counter++;
   }
+
+  
   
   spi(spiMessageTx);
   
