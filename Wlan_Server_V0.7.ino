@@ -37,17 +37,17 @@
 #include <TimeLib.h>
 #include <string.h>
 
-#include <ESP32DMASPIMaster.h>
+#include <ESP32DMASPISlave.h>
 
 //Set WiFi SSID and password
-//const char* ssid = "Kewwin_02"; //WiFi SSID
-//const char* password = "2214934027604276"; //WiFi password
+//const char* ssid = "5 Euro/min"; //WiFi SSID
+//const char* password = "Wir haben kein Passwort!420"; //WiFi password
 //const char* ssid = "Apartment 322"; //WiFi SSID
 //const char* password = "06456469822825645048"; //WiFi password
 
 //For Wi-Fi hotspot
-//const char* ssid = "demosat"; //WiFi SSID
-//const char* password = "123456789"; //WiFi password
+const char* ssid = "DemoSat"; //WiFi SSID
+const char* password = "123456789"; //WiFi password
 
 const char* http_username = "admin";  // username for login
 const char* http_password = "admin";  // password for login
@@ -97,8 +97,8 @@ String ODC1, ODC2, ODC3, ODC4, ODC5, ODC6, ODC7;
 String PAY1, PAY2, PAY3, PAY4;
 
 
-int numLog = 0; // numerator for log file
-int counter=0;  //Counter for checking connection status in loop
+uint8_t numLog = 0; // numerator for log file
+uint8_t counter=0;  //Counter for checking connection status in loop
 
 AsyncWebServer server(80);  //Setup a HTTP server
 
@@ -110,17 +110,17 @@ AsyncWebServer server(80);  //Setup a HTTP server
 #include <Adafruit_BMP280.h>
 Adafruit_BMP280 bmp; //I2C sensor connection of BMP280 modul
 
-ESP32DMASPI::Master master;
+ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave;
 
 static const uint32_t BUFFER_SIZE = 16;
 const int MCU_Av = 17;  //Set to Pin number, which will be used for MCU Availability
-uint8_t* spi_master_tx_buf; //Is declared in funtion "spi(...)" as parameter
-uint8_t* spi_master_rx_buf;
+uint8_t* spi_slave_tx_buf; //Is declared in funtion "spi(...)" as parameter
+uint8_t* spi_slave_rx_buf;
 uint8_t spiMessageTx[16];
 
-uint8_t spiLength=0;  //First (spi_master_rx_buf[0]) byte of spi message
-String spiAddress; //Second (...[1]) and third (...[2]) byte
-uint8_t spiNextPack=0; //Fourth (...[3]) byte
+uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
+uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
+String spiAddress; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
 String spiPayload1; //Fifth (...[4]) to sixth (...[5]) byte
 String spiPayload2;
 String spiPayload3;
@@ -270,38 +270,51 @@ String receiveData(String compareConfig, String data1, String data2, String data
 }
 
 void spi(uint8_t* spi_param){
-    spi_master_tx_buf = spi_param;
+    spi_slave_tx_buf = spi_param;
+    
+    if (slave.remained() == 0)
+    {
+      slave.queue(spi_slave_tx_buf, spi_slave_rx_buf, BUFFER_SIZE);
+    }
 
-    master.transfer(spi_master_tx_buf, spi_master_rx_buf, BUFFER_SIZE);
+    //for test purposes
+    while (slave.available()) {
+        // do something here with received data
+      for (size_t i = 0; i < BUFFER_SIZE; ++i)
+        printf("%d ", spi_slave_rx_buf[i]);
+      printf("\n");
 
-    spiLength=spi_master_rx_buf[0];
-    spiAddress=String(spi_master_rx_buf[1]);
-    spiNextPack=spi_master_rx_buf[2];
+      slave.pop();
+    }
+    
+    spiLength=spi_slave_rx_buf[0];
+    spiCI=spi_slave_rx_buf[1];
+    spiAddress=String(spi_slave_rx_buf[2]);
 
-    spiPayload1=String(spi_master_rx_buf[3]);
-    spiPayload1+=String(spi_master_rx_buf[4]);
+    spiPayload1=String(spi_slave_rx_buf[3]);
+    spiPayload1+=String(spi_slave_rx_buf[4]);
 
-    spiPayload2=String(spi_master_rx_buf[5]);
-    spiPayload2+=String(spi_master_rx_buf[6]);
+    spiPayload2=String(spi_slave_rx_buf[5]);
+    spiPayload2+=String(spi_slave_rx_buf[6]);
 
-    spiPayload3=String(spi_master_rx_buf[7]);
-    spiPayload3+=String(spi_master_rx_buf[8]);
+    spiPayload3=String(spi_slave_rx_buf[7]);
+    spiPayload3+=String(spi_slave_rx_buf[8]);
 
-    spiPayload4=String(spi_master_rx_buf[9]);
-    spiPayload4+=String(spi_master_rx_buf[10]);
+    spiPayload4=String(spi_slave_rx_buf[9]);
+    spiPayload4+=String(spi_slave_rx_buf[10]);
 
-    spiPayload5=String(spi_master_rx_buf[11]);
-    spiPayload5+=String(spi_master_rx_buf[12]);
+    spiPayload5=String(spi_slave_rx_buf[11]);
+    spiPayload5+=String(spi_slave_rx_buf[12]);
 
-    spiPayload6=String(spi_master_rx_buf[13]);
-    spiPayload6+=String(spi_master_rx_buf[14]);
+    spiPayload6=String(spi_slave_rx_buf[13]);
+    spiPayload6+=String(spi_slave_rx_buf[14]);
 
-    spiPayload7=String(spi_master_rx_buf[15]);
-    spiPayload7+=String(spi_master_rx_buf[16]);
+    spiPayload7=String(spi_slave_rx_buf[15]);
+    spiPayload7+=String(spi_slave_rx_buf[16]);
 
-    spiCRC=spi_master_rx_buf[2+spiLength+1];
+    spiCRC=spi_slave_rx_buf[2+spiLength+1];
 
-    spiAddress="11";
+    //spiAddress="11";
     //spiPayload="200";
 
     //switch spiPayload
@@ -334,13 +347,13 @@ void spi(uint8_t* spi_param){
     printf("\nReceived:");
     //Show received data (if needed)
     for (uint8_t i = 0; i < BUFFER_SIZE; ++i)
-        printf("%d ", spi_master_rx_buf[i]);
+        printf("%d ", spi_slave_rx_buf[i]);
     printf("\n");
 
     printf("Transmitted:");
     //Show transmitted data
     for (uint8_t i = 0; i < BUFFER_SIZE; ++i)
-        printf("%d ", spi_master_tx_buf[i]);
+        printf("%d ", spi_slave_tx_buf[i]);
     printf("\n");
 
     printf("Payload: %s\nspiAddress: %s\n", spiPayload1, spiAddress);
@@ -349,20 +362,20 @@ void spi(uint8_t* spi_param){
 
 /*
     //Dispense payload to correct function for further proceeding
-    if(spi_master_rx_buf[1]==ce_odc && spi_master_rx_buf[2]==ps_epm)  //epm
+    if(spi_slave_rx_buf[1]==ce_odc && spi_slave_rx_buf[2]==ps_epm)  //epm
     {
       epm();  //tbd
-    }else if(spi_master_rx_buf[1]==ce_epm && spi_master_rx_buf[2]==ps_odc)  //odc
+    }else if(spi_slave_rx_buf[1]==ce_epm && spi_slave_rx_buf[2]==ps_odc)  //odc
     {
       odc();  //tbd
-    }else if(spi_master_rx_buf[1]==ce_tms && spi_master_rx_buf[2]==ps_tms)  //tms
+    }else if(spi_slave_rx_buf[1]==ce_tms && spi_slave_rx_buf[2]==ps_tms)  //tms
     {
       tms();  //tbd
-    }else if(spi_master_rx_buf[1]==ce_pay && spi_master_rx_buf[2]==ps_pay)  //pay
+    }else if(spi_slave_rx_buf[1]==ce_pay && spi_slave_rx_buf[2]==ps_pay)  //pay
     {
       pay();  //tbd
     }else{
-      Serial.println("Error, no module with PS %d and ComEn %d connected.", spi_master_rx_buf[1], spi_master_rx_buf[2]);
+      Serial.println("Error, no module with PS %d and ComEn %d connected.", spi_slave_rx_buf[1], spi_slave_rx_buf[2]);
     }
 */
 
@@ -454,9 +467,9 @@ void t_switchTxData()
 
 void set_buffer() {
     for (uint32_t i = 0; i < BUFFER_SIZE; i++) {
-        spi_master_tx_buf[i] = i & 0xFF;
+        spi_slave_tx_buf[i] = i & 0xFF;
     }
-    memset(spi_master_rx_buf, 0, BUFFER_SIZE);
+    memset(spi_slave_rx_buf, 0, BUFFER_SIZE);
 }
 
 
@@ -557,8 +570,8 @@ void setup(void){
 
   ConnectToWiFi();
 
-  spi_master_tx_buf = master.allocDMABuffer(BUFFER_SIZE);
-  spi_master_rx_buf = master.allocDMABuffer(BUFFER_SIZE);
+  spi_slave_tx_buf = slave.allocDMABuffer(BUFFER_SIZE);
+  spi_slave_rx_buf = slave.allocDMABuffer(BUFFER_SIZE);
 
   for(int c=0; c<mcu_log_size; c++)
   {
@@ -566,15 +579,15 @@ void setup(void){
   }
 
   set_buffer();
-  pinMode(MCU_Av, INPUT);
+  pinMode(MCU_Av, OUTPUT);
   delay(5000);
-  master.setDataMode(SPI_MODE3);
-  master.setFrequency(1000000);
-  master.setMaxTransferSize(BUFFER_SIZE);
-  master.setDMAChannel(2);  // 1 or 2 only
-  master.setQueueSize(1);   // transaction queue size
+  slave.setDataMode(SPI_MODE3);
+  //slave.setFrequency(1000000);    //can be deleted, once tested
+  slave.setMaxTransferSize(BUFFER_SIZE);
+  slave.setDMAChannel(2);  // 1 or 2 only
+  slave.setQueueSize(1);   // transaction queue size
 
-  master.begin();  // default SPI is HSPI
+  slave.begin(VSPI);  // default SPI is HSPI
 
   if(!MDNS.begin("cubesat")) {  //Argument of MDNS.begin holds website name (".local" has to be added)
      Serial.println("Error starting mDNS");
@@ -789,18 +802,11 @@ void loop(void){
     counter++;
   }
 
-  //Only use SPI if MCU is available
-  if(digitalRead(MCU_Av)==0)
-  {
-    spi(spiMessageTx);
-    t_switchTxData(); //Only for test purposes to simulate different messages
-    mcuLoad(0);
-  }else{
-    mcuLoad(1);
-  }
+  //spi();
+
   Serial.println("1");
   //To access your stored values
-  // readFile(SPIFFS, "/configEPM.txt");
+  //readFile(SPIFFS, "/configEPM.txt");
 
   delay(5000);
 }
