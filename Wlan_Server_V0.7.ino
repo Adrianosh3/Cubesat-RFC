@@ -113,10 +113,10 @@ Adafruit_BMP280 bmp; //I2C sensor connection of BMP280 modul
 ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave;
 
 static const uint32_t BUFFER_SIZE = 16;
-const int MCU_Av = 17;  //Set to Pin number, which will be used for MCU Availability
+const int RFC_Av = 17;  //Set to Pin number, which will be used for MCU Availability
 uint8_t* spi_slave_tx_buf; //Is declared in funtion "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
-uint8_t spiMessageTx[16];
+uint8_t spiMessageTx_T[16];
 
 uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
 uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
@@ -135,10 +135,10 @@ uint8_t transactionNbr=1;
 
 uint8_t t_switch_payload=0;
 
-//Change length of array AND mcu_load_size, if mcu status should be tracked over a longer period of time
-uint8_t mcu_log[20];
-uint8_t mcu_log_size=20;  //Has to be equal to the size of the mcu_log array
-String mcu_load=""; //Load of MCU in percent
+//Change length of rfc_log array AND rfc_load_size, if rfc status should be tracked over a longer period of time
+uint8_t rfc_log[20];
+uint8_t rfc_log_size=20;  //Has to be equal to the size of the rfc_log array
+String rfc_load=""; //Load of RFC in percent
 uint8_t sum=0;
 
 String testData = "";
@@ -381,24 +381,24 @@ void spi(uint8_t* spi_param){
 
 }
 
-void mcuLoad(uint8_t actualStatus){
+void rfcLoad(uint8_t actualStatus){
   sum=0;
   //Shift array one byte to the right, so a new value can be added to the array
-  for(int c=mcu_log_size; c>0; c--){
-    mcu_log[c]=mcu_log[c-1];
+  for(int c=rfc_log_size; c>0; c--){
+    rfc_log[c]=rfc_log[c-1];
   }
 
-  mcu_log[0]=actualStatus;  //First element is most recent status
+  rfc_log[0]=actualStatus;  //First element is most recent status
 
-  for(int c=0; c<mcu_log_size; c++){
-    sum+=mcu_log[c];
+  for(int c=0; c<rfc_log_size; c++){
+    sum+=rfc_log[c];
   }
 
-  mcu_load=String(sum*100/mcu_log_size);
+  rfc_load=String(sum*100/rfc_log_size);
 
-  //printf("\n sum:%d mcuLoad: %s\n", mcu_load);    //ohne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
+  //printf("\n sum:%d rfcLoad: %s\n", rfc_load);    //ohne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
 
-  printf("\n mcuLoad: %s\n", mcu_load);
+  printf("\n rfcLoad: %s\n", rfc_load);
 
 }
 
@@ -407,60 +407,60 @@ void t_switchTxData()
   switch (counterSpi)
   {
     case 0:
-    spiMessageTx[0]=0;
-    spiMessageTx[1]=0;
-    spiMessageTx[2]=0;
-    spiMessageTx[3]=1;
-    spiMessageTx[4]=0;
-    spiMessageTx[5]=0;
-    spiMessageTx[6]=0;
-    spiMessageTx[7]=1;
-    spiMessageTx[8]=0;
-    spiMessageTx[9]=0;
-    spiMessageTx[10]=0;
-    spiMessageTx[11]=1;
-    spiMessageTx[12]=0;
-    spiMessageTx[13]=0;
-    spiMessageTx[14]=0;
-    spiMessageTx[15]=1;
+    spiMessageTx_T[0]=0;
+    spiMessageTx_T[1]=0;
+    spiMessageTx_T[2]=0;
+    spiMessageTx_T[3]=1;
+    spiMessageTx_T[4]=0;
+    spiMessageTx_T[5]=0;
+    spiMessageTx_T[6]=0;
+    spiMessageTx_T[7]=1;
+    spiMessageTx_T[8]=0;
+    spiMessageTx_T[9]=0;
+    spiMessageTx_T[10]=0;
+    spiMessageTx_T[11]=1;
+    spiMessageTx_T[12]=0;
+    spiMessageTx_T[13]=0;
+    spiMessageTx_T[14]=0;
+    spiMessageTx_T[15]=1;
     counterSpi++;
     break;
     case 1:
-    spiMessageTx[0]=1;
-    spiMessageTx[1]=0;
-    spiMessageTx[2]=2;
-    spiMessageTx[3]=4;
-    spiMessageTx[4]=1;
-    spiMessageTx[5]=0;
-    spiMessageTx[6]=2;
-    spiMessageTx[7]=4;
-    spiMessageTx[8]=1;
-    spiMessageTx[9]=0;
-    spiMessageTx[10]=2;
-    spiMessageTx[11]=4;
-    spiMessageTx[12]=1;
-    spiMessageTx[13]=0;
-    spiMessageTx[14]=2;
-    spiMessageTx[15]=4;
+    spiMessageTx_T[0]=1;
+    spiMessageTx_T[1]=0;
+    spiMessageTx_T[2]=2;
+    spiMessageTx_T[3]=4;
+    spiMessageTx_T[4]=1;
+    spiMessageTx_T[5]=0;
+    spiMessageTx_T[6]=2;
+    spiMessageTx_T[7]=4;
+    spiMessageTx_T[8]=1;
+    spiMessageTx_T[9]=0;
+    spiMessageTx_T[10]=2;
+    spiMessageTx_T[11]=4;
+    spiMessageTx_T[12]=1;
+    spiMessageTx_T[13]=0;
+    spiMessageTx_T[14]=2;
+    spiMessageTx_T[15]=4;
     counterSpi=0;
     break;
     default:
-    spiMessageTx[0]=7;
-    spiMessageTx[1]=7;
-    spiMessageTx[2]=7;
-    spiMessageTx[3]=7;
-    spiMessageTx[4]=7;
-    spiMessageTx[5]=7;
-    spiMessageTx[6]=7;
-    spiMessageTx[7]=7;
-    spiMessageTx[8]=7;
-    spiMessageTx[9]=7;
-    spiMessageTx[10]=7;
-    spiMessageTx[11]=7;
-    spiMessageTx[12]=7;
-    spiMessageTx[13]=7;
-    spiMessageTx[14]=7;
-    spiMessageTx[15]=7;
+    spiMessageTx_T[0]=7;
+    spiMessageTx_T[1]=7;
+    spiMessageTx_T[2]=7;
+    spiMessageTx_T[3]=7;
+    spiMessageTx_T[4]=7;
+    spiMessageTx_T[5]=7;
+    spiMessageTx_T[6]=7;
+    spiMessageTx_T[7]=7;
+    spiMessageTx_T[8]=7;
+    spiMessageTx_T[9]=7;
+    spiMessageTx_T[10]=7;
+    spiMessageTx_T[11]=7;
+    spiMessageTx_T[12]=7;
+    spiMessageTx_T[13]=7;
+    spiMessageTx_T[14]=7;
+    spiMessageTx_T[15]=7;
     counterSpi=0;
     }
 }
@@ -573,13 +573,13 @@ void setup(void){
   spi_slave_tx_buf = slave.allocDMABuffer(BUFFER_SIZE);
   spi_slave_rx_buf = slave.allocDMABuffer(BUFFER_SIZE);
 
-  for(int c=0; c<mcu_log_size; c++)
+  for(int c=0; c<rfc_log_size; c++)
   {
-    mcu_log[c]=0;
+    rfc_log[c]=0;
   }
 
   set_buffer();
-  pinMode(MCU_Av, OUTPUT);
+  pinMode(RFC_Av, OUTPUT);
   delay(5000);
   slave.setDataMode(SPI_MODE3);
   //slave.setFrequency(1000000);    //can be deleted, once tested
@@ -602,7 +602,7 @@ void setup(void){
   });
 
   server.on("/workload", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", mcu_load.c_str());
+    request->send_P(200, "text/plain", rfc_load.c_str());
   });
 
   server.on("/epmValue1", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -801,10 +801,9 @@ void loop(void){
   } else {
     counter++;
   }
-
+  
   //spi();
-
-  Serial.println("1");
+  
   //To access your stored values
   //readFile(SPIFFS, "/configEPM.txt");
 
