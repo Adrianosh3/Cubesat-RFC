@@ -90,11 +90,11 @@ String conf3 = "";
 String conf4 = "";
 String EPM1, EPM2, EPM3, EPM4;
 String ODC1, ODC2, ODC3, ODC4, ODC5, ODC6, ODC7;
-String PAY1, PAY;
+String PAY1, PAY2, PAY3, PAY4;
 String TMS1 = "50";
-String TMS2 = "100";
-String TMS3 = "200";
-String TMS4 = "300";
+String TMS2 = "51";
+String TMS3 = "52";
+String TMS4 = "53";
 
 
 uint8_t numLog = 0; // numerator for log file
@@ -120,7 +120,9 @@ uint8_t spiMessageTx_T[16];
 String spiMessageTx = "";
 uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
 uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
-String spiAddress; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
+String spiAddress=""; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
+String spiAddressPS="";
+String spiAddressComEn="";
 String spiPayload1; //Fifth (...[4]) to sixth (...[5]) byte
 String spiPayload2;
 String spiPayload3;
@@ -211,7 +213,7 @@ void writeConfig(String ident) {
   String ce = (readFile(SPIFFS, ("/ce" + ident + ".txt").c_str()));
   String ps = (readFile(SPIFFS, ("/ps" + ident + ".txt").c_str()));
   File f = SPIFFS.open("/config" + ident + ".txt", "w");
-  f.printf("%s%s", ce, ps);
+  f.printf("%s%s", ps, ce);
   f.close();
   readFile(SPIFFS, ("/config" + ident + ".txt").c_str());
   return;
@@ -225,8 +227,8 @@ void sendCommand() {
 
 String receiveData(String compareConfig, String data1, String data2, String data3, String data4, String data5, String data6, String data7) {
   // decide wich configuration and update global variables of that module
-    if ( conf1 == compareConfig) {
-      // EPM
+    if (conf1 == compareConfig) {
+      //EPM
 
       EPM1 = data1;
       EPM2 = data2;
@@ -236,7 +238,7 @@ String receiveData(String compareConfig, String data1, String data2, String data
       printf("\nHat funktioniert.\ndat: %s\ncompareConfig: %s\nconf1: %s\n", data1, compareConfig, conf1);
       return conf1;
     } else if (conf2 == compareConfig) {
-      // ODC
+      //ODC
 
       ODC1 = data1;
       ODC2 = data2;
@@ -292,7 +294,12 @@ void spi(uint8_t* spi_param){
     
     spiLength=spi_slave_rx_buf[0];
     spiCI=spi_slave_rx_buf[1];
-    spiAddress=String(spi_slave_rx_buf[2]);
+    //spiAddress=String(spi_slave_rx_buf[2]);
+
+    
+    spiAddressPS=String(spi_slave_rx_buf[0]*1+spi_slave_rx_buf[1]*2+spi_slave_rx_buf[2]*3+spi_slave_rx_buf[3]*4); //TBD: if(spiAddressPS>4): ERROR
+    spiAddressComEn=String(spi_slave_rx_buf[5]+spi_slave_rx_buf[6]+spi_slave_rx_buf[7]);  //??? --> Antwort von Mirko
+    spiAddress=spiAddressPS+spiAddressComEn;
 
     spiPayload1=String(spi_slave_rx_buf[3]);
     spiPayload1+=String(spi_slave_rx_buf[4]);
@@ -666,6 +673,12 @@ void setup(void){
   server.on("/payValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", PAY2.c_str());
   });
+  server.on("/payValue3", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", PAY3.c_str());
+  });
+  server.on("/payValue4", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", PAY4.c_str());
+  });
   
 
   //Commands
@@ -818,7 +831,7 @@ void loop(void){
     counter++;
   }
   
-  //spi();
+  spi(spiMessageTx);
   
   //To access your stored values
   //readFile(SPIFFS, "/configEPM.txt");
