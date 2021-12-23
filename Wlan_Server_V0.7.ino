@@ -42,12 +42,12 @@
 //Set WiFi SSID and password
 //const char* ssid = "5 Euro/min"; //WiFi SSID
 //const char* password = "Wir haben kein Passwort!420"; //WiFi password
-//const char* ssid = "Apartment 322"; //WiFi SSID
-//const char* password = "06456469822825645048"; //WiFi password
+const char* ssid = "Apartment 322"; //WiFi SSID
+const char* password = "06456469822825645048"; //WiFi password
 
 //For Wi-Fi hotspot
-const char* ssid = "DemoSat"; //WiFi SSID
-const char* password = "123456789"; //WiFi password
+//const char* ssid = "DemoSat"; //WiFi SSID
+//const char* password = "123456789"; //WiFi password
 
 const char* http_username = "admin";  // username for login
 const char* http_password = "admin";  // password for login
@@ -89,12 +89,12 @@ String conf2 = "";
 String conf3 = "";
 String conf4 = "";
 String EPM1, EPM2, EPM3, EPM4;
+String ODC1, ODC2, ODC3, ODC4, ODC5, ODC6, ODC7;
+String PAY1, PAY;
 String TMS1 = "50";
 String TMS2 = "100";
 String TMS3 = "200";
 String TMS4 = "300";
-String ODC1, ODC2, ODC3, ODC4, ODC5, ODC6, ODC7;
-String PAY1, PAY2, PAY3, PAY4;
 
 
 uint8_t numLog = 0; // numerator for log file
@@ -117,7 +117,7 @@ const int RFC_Av = 17;  //Set to Pin number, which will be used for MCU Availabi
 uint8_t* spi_slave_tx_buf; //Is declared in funtion "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
 uint8_t spiMessageTx_T[16];
-
+String spiMessageTx = "";
 uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
 uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
 String spiAddress; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
@@ -132,6 +132,7 @@ uint8_t spiCRC=0; //Last (...[4+spiLength+1]) byte
 uint8_t buff;
 uint8_t counterSpi=0;
 uint8_t transactionNbr=1;
+int busy = 0;
 
 uint8_t t_switch_payload=0;
 
@@ -241,6 +242,9 @@ String receiveData(String compareConfig, String data1, String data2, String data
       ODC2 = data2;
       ODC3 = data3;
       ODC4 = data4;
+      ODC5 = data5;
+      ODC6 = data6;
+      ODC7 = data7;
 
       printf("\nHat funktioniert.\ndat: %s\ncompareConfig: %s\nconf2: %s\n", data1, compareConfig, conf2);
       return conf2;
@@ -259,14 +263,13 @@ String receiveData(String compareConfig, String data1, String data2, String data
 
       PAY1 = data1;
       PAY2 = data2;
-      PAY3 = data3;
-      PAY4 = data4;
 
       printf("\nHat funktioniert.\ndat: %s\ncompareConfig: %s\nconf4: %s\n", data1, compareConfig, conf4);
       return conf4;
     }else{
       printf("\nHat nicht funktioniert.\ndat: %s\ncompareConfig: %s\n", data1, compareConfig);
     }
+    busy = 0;
 }
 
 void spi(uint8_t* spi_param){
@@ -605,33 +608,38 @@ void setup(void){
     request->send_P(200, "text/plain", rfc_load.c_str());
   });
 
+  // EPM
   server.on("/epmValue1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Temperature().c_str());
   });
   server.on("/epmValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Altitude().c_str());
   });
-
   server.on("/epmValue3", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", readBMP280Pressure().c_str());
   });
+  
 
+  // ODC
+  server.on("/odcValue1", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", ODC1.c_str());
+  });
   server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC2.c_str());
   });
-  server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/odcValue3", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC3.c_str());
   });
-  server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/odcValue4", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC4.c_str());
   });
-  server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/odcValue5", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC5.c_str());
   });
-  server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/odcValue6", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC6.c_str());
   });
-  server.on("/odcValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/odcValue7", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", ODC7.c_str());
   });
 
@@ -651,7 +659,14 @@ void setup(void){
   });
 
 
-
+  // PAY
+  server.on("/payValue1", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", PAY1.c_str());
+  });
+  server.on("/payValue2", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", PAY2.c_str());
+  });
+  
 
   //Commands
   server.on("/command1", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -732,6 +747,7 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
+      spiMessageTx = readFile(SPIFFS, ("/inCommand1.txt"));
     }
     else if (request->hasParam(TEST)) {
       inputMessage = request->getParam(PARAM_COMMAND1)->value();
