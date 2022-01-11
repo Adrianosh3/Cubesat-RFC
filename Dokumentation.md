@@ -48,10 +48,10 @@ LEN = Anzahl aller Bytes, inkl. LEN und CRC, außer Null-Byte im Sonderpaket
 7. 111 = *Reserved*
 
 (c)
-- R = Restart (kein String)
-- E = Error (String optional)
-- I = Intervallmessung setzen (String: Tabellenplatz | Periode (1-255 bzw. 100ms - 25,5s) | String (Standardpaket))
-- S = Start (kein String)
+- R (82) = Restart (kein String)
+- E (69) = Error (String optional)
+- I (73) = Intervallmessung setzen (String: Tabellenplatz | Periode (1-255 bzw. 100ms - 25,5s) | String (Standardpaket))
+- S (83) = Start (kein String)
 
 
 
