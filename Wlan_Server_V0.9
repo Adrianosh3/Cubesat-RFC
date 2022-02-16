@@ -1,5 +1,5 @@
 //===============================================================
-// @file:     GroundControl_V9.0
+// @file:     GroundControl_V8.0
 // @brief:    Communication CubeSat - Ground Control
 //
 // @authors:  Adrian Setka, Immanuel Weule
@@ -7,7 +7,7 @@
 // @hardware: ESP32-DevKitC V4 (ESP32-WROOM-32U)
 // @comments: Can only connect to 2,4 GHz, not to 5 GHz
 //
-// @date:     2022-02-16
+// @date:     2022-01-10
 //
 // @links:    https://randomnerdtutorials.com/esp32-esp8266-plot-chart-web-server/
 //            https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
@@ -36,6 +36,11 @@
 #include <analogWrite.h>
 #include <TimeLib.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+
 
 #include <ESP32DMASPISlave.h>
 
@@ -104,27 +109,27 @@ AsyncWebServer server(80);  //Setup a HTTP server
 
 
 
-//Just for test purposes of sensormonitoring
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BMP280.h>
-Adafruit_BMP280 bmp; //I2C sensor connection of BMP280 modul
-
+//SPI SETTINGS
 ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave;
 
 static const uint32_t BUFFER_SIZE = 256;
 const int RFC_Av = 17;  //Tells MCU if RFC is available or not
 uint8_t* spi_slave_tx_buf; //Is declared in function "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
-uint8_t spiMessageTx_T[255];
+uint8_t spiMessageTx_T[256];
 const char* spiMessageTx_s = "Hello world.";
-uint8_t* spiMessageTx_test=0;
-
+char* spiMessageTx_cp;
+char spiMessageTx_c[256];
+int spiMessageTx_i_dummy[256];
+int spiMessageTx_i[256];
+int spiMessageArrayCounter=0;
+int spiMessageThreshhold=60;    //Threshhold for distinction between numbers and letters
+uint8_t* spiMessageTx_uip;
+uint8_t spiMessageTx_ui[256];
 
 
 uint8_t spi_test_counter=0;
 uint8_t spi_test_counter2=0;
-
 
 
 
@@ -144,6 +149,7 @@ String spiPayload7;
 uint8_t spiCRC=0; //Last (...[4+spiLength+1]) byte
 uint8_t buff;
 uint8_t counterSpi=0;
+
 uint8_t transactionNbr=1;
 int busy = 0;
 
@@ -628,10 +634,9 @@ void setup(void){
   Serial.begin(115200); //Open a serial connection
   Serial.println("Booting...");
 
-  if (!bmp.begin(0x76)) {
-    Serial.println("Could not find a valid BME280 sensor, check wiring!");
-    //while (1) delay(10);
-  }
+  //Write SPI CS pin low, to signal MCU that RFC is not ready to send/receive messages yet
+  delay(1);
+  digitalWrite(29, LOW);
 
   //Initialize SPIFFS
   if(!SPIFFS.begin(true)){
@@ -670,13 +675,13 @@ void setup(void){
 
   pinMode(RFC_Av, OUTPUT);
   digitalWrite(RFC_Av, HIGH);
-  delay(5000);
-  slave.setDataMode(SPI_MODE3);
+  //delay(5000);  //Is this delay even necessary?
+  slave.setDataMode(SPI_MODE3);  //Only 3 works
   slave.setMaxTransferSize(BUFFER_SIZE);
-  //slave.setDMAChannel(2);  // 1 or 2 only
-  slave.setQueueSize(1);   // transaction queue size
+  //slave.setDMAChannel(2);  //1 or 2 only
+  slave.setQueueSize(1);   //Transaction queue size
 
-  slave.begin(VSPI);  // default SPI is HSPI
+  slave.begin(VSPI);  //Default SPI is HSPI; VSPID: 37, VSPIQ: 31, VSPICLK: 30, VSPICS0: 29
 
   if(!MDNS.begin("cubesat")) {  //Argument of MDNS.begin holds website name (".local" has to be added)
      Serial.println("Error starting mDNS");
@@ -779,7 +784,7 @@ void setup(void){
   server.on("/command5", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/inCommand5.txt", "text/text");
   });
-
+  
   //Config values
   server.on("/ceepm", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/ceEPM.txt", "text/text");
@@ -817,7 +822,7 @@ void setup(void){
   server.on("/apipay", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/apiPAY.txt", "text/text");
   });
-
+  
   //Download log files
   server.on("/download1", HTTP_GET, [](AsyncWebServerRequest *request){
       request->send(SPIFFS, "/logT.txt", "text/text", true);
@@ -828,7 +833,7 @@ void setup(void){
   server.on("/download3", HTTP_GET, [](AsyncWebServerRequest *request){
       request->send(SPIFFS, "/logP.txt", "text/text", true);
   });
-
+  
   //Send a GET request to <ESP_IP>/get?inputString=<inputMessage>
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
     if(!request->authenticate(http_username, http_password))
@@ -843,6 +848,49 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
       spiMessageTx_s = (readFile(SPIFFS, ("/inCommand1.txt"))).c_str();
+      
+      spiMessageTx_cp = strdup(spiMessageTx_s);  //convert const char* to char*
+      for(int j=0; j<256; j++){
+        spiMessageTx_c[j]=*spiMessageTx_cp++;
+        spiMessageTx_i_dummy[j]=(int)spiMessageTx_c[j];
+        printf("%d ", spiMessageTx_i_dummy[j]);
+      }
+  
+      printf("\n");
+  
+      for(int j=0; j<256; j++)
+      {
+        printf("\n[%d] %d ", j, spiMessageTx_i_dummy[j]);
+        if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)
+        {
+          //Do nothing (it's a comma)
+        }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j]-48;
+          spiMessageArrayCounter++;
+        }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){
+          spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j];
+          spiMessageArrayCounter++;
+        }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*10 + spiMessageTx_i_dummy[j+1]-48;
+          spiMessageArrayCounter++;
+          j++;
+        }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*100 + (spiMessageTx_i_dummy[j+1]-48)*10 + spiMessageTx_i_dummy[j+2]-48;
+          spiMessageArrayCounter++;
+          j+=2;
+        }else{
+          printf("Error.");
+        }
+      }
+  
+      for (int i = 0; i < 256; ++i) {
+        spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
+      }
+      
+      spiMessageTx_uip = &spiMessageTx_ui[0];
+      
+      spiMessageTx=spiMessageTx_uip;  //using ending "[...]_uip" for better overview, but changing for further proceeding
+      //spiMessageTx should be final variable
     }
     else if (request->hasParam(TEST)) {
       inputMessage = request->getParam(PARAM_COMMAND1)->value();
@@ -892,6 +940,8 @@ void setup(void){
 
   server.onNotFound(notFound);
   server.begin();
+
+  digitalWrite(29, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is now ready to send/receive SPI messages
 }
 
 
@@ -915,7 +965,7 @@ void loop(void){
   
   delay(75);
   
-  spi(spiMessageTx_test);
+  spi(spiMessageTx);
 
   //To access your stored values
   //readFile(SPIFFS, "/configEPM.txt");
