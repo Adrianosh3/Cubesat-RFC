@@ -142,7 +142,15 @@ int spiMessageTx_i[256];
 int spiMessageArrayCounter=0;
 int spiMessageThreshhold=60;    //Threshhold for distinction between numbers and letters
 uint8_t* spiMessageTx_uip;
-uint8_t spiMessageTx_ui[256];
+uint8_t spiMessageTx_ui[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t spiMessage_offset=0;
 
 
 uint8_t spi_test_counter=0;
@@ -925,9 +933,10 @@ void setup(void){
             printf("Error.");
           }
         }
+        spiMessageArrayCounter=0;
         
         printf("\nThird for loop.\n");
-  
+        
         for (int i = 0; i < 256; ++i) {
           spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
         }
@@ -946,10 +955,11 @@ void setup(void){
         //spiMessageTx should be final variable
         Serial.println("spiMessageTx: ");
         
-        for(int g=0; g<5; g++)
+        for(int g=0; g<10; g++)
         {
            Serial.println(*spiMessageTx++);
         }
+
       }
       counterMessagesSent=1;
     }
