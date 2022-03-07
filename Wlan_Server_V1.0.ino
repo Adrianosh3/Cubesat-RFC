@@ -45,8 +45,8 @@
 #include <ESP32DMASPISlave.h>
 
 //Set WiFi SSID and password
-//const char* ssid = "5 Euro/min"; //WiFi SSID
-//const char* password = "Wir haben kein Passwort!420"; //WiFi password
+const char* ssid = "5 Euro/min"; //WiFi SSID
+const char* password = "Wir haben kein Passwort!420"; //WiFi password
 //const char* ssid = "Apartment 322"; //WiFi SSID
 //const char* password = "06456469822825645048"; //WiFi password
 
@@ -118,10 +118,26 @@ const int RFC_Av = 17;  //Tells MCU if RFC is available or not
 uint8_t* spi_slave_tx_buf; //Is declared in function "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
 uint8_t spiMessageTx_T[256];
+String spiMessageTx_str;
 const char* spiMessageTx_s = "Hello world.";
+const char* testnachricht = "Hello World.";
 char* spiMessageTx_cp;
-char spiMessageTx_c[256];
-int spiMessageTx_i_dummy[256];
+char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int spiMessageTx_i_dummy[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int spiMessageTx_i[256];
 int spiMessageArrayCounter=0;
 int spiMessageThreshhold=60;    //Threshhold for distinction between numbers and letters
@@ -151,13 +167,15 @@ uint8_t buff;
 uint8_t counterSpi=0;
 uint8_t transactionNbr=1;
 int busy = 0;
+int counterMessagesSent=0;
+
 
 uint8_t t_switch_payload=0;
 
-//Change length of rfc_log array AND rfc_load_size, if rfc status should be tracked over a longer period of time
-uint8_t rfc_log[20];
-uint8_t rfc_log_size=20;  //Has to be equal to the size of the rfc_log array
-String rfc_load=""; //Load of RFC in percent
+//Change length of mcu_log array AND mcu_load_size, if mcu status should be tracked over a longer period of time
+uint8_t mcu_log[20];
+uint8_t mcu_log_size=20;  //Has to be equal to the size of the mcu_log array
+String mcu_load=""; //Load of RFC in percent
 uint8_t sum=0;
 
 String testData = "";
@@ -426,7 +444,6 @@ void spi(uint8_t* spi_param){
       for (uint16_t i = 0; i < 250; ++i)  //i<BUFFER_SIZE
         printf("%d ", spi_slave_rx_buf[i]);
       printf("\n");
-
       slave.pop();
     }
 */
@@ -509,9 +526,7 @@ void spi(uint8_t* spi_param){
     printf("Payload: %s\nspiAddress: %s\n", spiPayload1, spiAddress);
 
 /*
-
     receiveData(spiAddress, spiPayload1, spiPayload2, spiPayload3, spiPayload4, spiPayload5, spiPayload6, spiPayload7);
-
 */
 
 
@@ -537,24 +552,24 @@ void spi(uint8_t* spi_param){
 
 }
 
-void rfcLoad(uint8_t actualStatus){
+void mcuLoad(uint8_t actualStatus){
   sum=0;
   //Shift array one byte to the right, so a new value can be added to the array
-  for(int c=rfc_log_size; c>0; c--){
-    rfc_log[c]=rfc_log[c-1];
+  for(int c=mcu_log_size; c>0; c--){
+    mcu_log[c]=mcu_log[c-1];
   }
 
-  rfc_log[0]=actualStatus;  //First element is most recent status
+  mcu_log[0]=actualStatus;  //First element is most recent status
 
-  for(int c=0; c<rfc_log_size; c++){
-    sum+=rfc_log[c];
+  for(int c=0; c<mcu_log_size; c++){
+    sum+=mcu_log[c];
   }
 
-  rfc_load=String(sum*100/rfc_log_size);
+  mcu_load=String(sum*100/mcu_log_size);
 
-  //printf("\n sum:%d rfcLoad: %s\n", rfc_load);    //ohne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
+  //printf("\n sum:%d mcuLoad: %s\n", mcu_load);    //ohne diese Zeile funktioniert der code, mit ihr nicht (nochmal prüfen)
 
-  printf("\n rfcLoad: %s\n", rfc_load);
+  printf("\n mcuLoad: %s\n", mcu_load);
 
 }
 
@@ -675,9 +690,9 @@ void setup(void){
   spi_slave_tx_buf = slave.allocDMABuffer(BUFFER_SIZE);
   spi_slave_rx_buf = slave.allocDMABuffer(BUFFER_SIZE);
 
-  for(int c=0; c<rfc_log_size; c++)
+  for(int c=0; c<mcu_log_size; c++)
   {
-    rfc_log[c]=0;
+    mcu_log[c]=0;
   }
 
   pinMode(RFC_Av, OUTPUT);
@@ -857,50 +872,86 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
-      spiMessageTx_s = (readFile(SPIFFS, ("/inCommand1.txt"))).c_str();
-
-      spiMessageTx_cp = strdup(spiMessageTx_s);  //convert const char* to char*
-      for(int j=0; j<256; j++){
-        spiMessageTx_c[j]=*spiMessageTx_cp++;
-        spiMessageTx_i_dummy[j]=(int)spiMessageTx_c[j];
-        printf("%d ", spiMessageTx_i_dummy[j]);
-      }
-
-      printf("\n");
-
-      for(int j=0; j<256; j++)
-      {
-        printf("\n[%d] %d ", j, spiMessageTx_i_dummy[j]);
-        if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)
+      spiMessageTx_str = readFile(SPIFFS, ("/inCommand1.txt"));
+      if ( counterMessagesSent > 0) {
+        spiMessageTx_s = spiMessageTx_str.c_str();      
+            
+        Serial.println("spiMessageTx_s");
+        Serial.println(spiMessageTx_s);
+        Serial.println("testnachricht");
+        Serial.println(testnachricht);
+        
+        spiMessageTx_cp = strdup(spiMessageTx_s);  //convert const char* to char*
+        
+        Serial.println("spiMessageTx_cp");
+        Serial.println(spiMessageTx_cp);
+  
+        printf("\nStart of conversion.\n");
+        printf("First for loop.\n");
+        for(int j=0; j<256; j++){
+          spiMessageTx_c[j]=*spiMessageTx_cp++;
+          spiMessageTx_i_dummy[j]=(int)spiMessageTx_c[j];
+          printf("%d ", spiMessageTx_i_dummy[j]);
+        }
+  
+        printf("\n");
+        
+        printf("\nSecond for loop.\n");
+  
+        for(int j=0; j<256; j++)
         {
-          //Do nothing (it's a comma)
-        }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
-          spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j]-48;
-          spiMessageArrayCounter++;
-        }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){
-          spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j];
-          spiMessageArrayCounter++;
-        }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
-          spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*10 + spiMessageTx_i_dummy[j+1]-48;
-          spiMessageArrayCounter++;
-          j++;
-        }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
-          spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*100 + (spiMessageTx_i_dummy[j+1]-48)*10 + spiMessageTx_i_dummy[j+2]-48;
-          spiMessageArrayCounter++;
-          j+=2;
-        }else{
-          printf("Error.");
+          printf("\n[%d] %d ", j, spiMessageTx_i_dummy[j]);
+          if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)
+          {
+            //Do nothing (it's a comma)
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+            spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j]-48;
+            spiMessageArrayCounter++;
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){
+            spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j];
+            spiMessageArrayCounter++;
+          }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+            spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*10 + spiMessageTx_i_dummy[j+1]-48;
+            spiMessageArrayCounter++;
+            j++;
+          }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+            spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*100 + (spiMessageTx_i_dummy[j+1]-48)*10 + spiMessageTx_i_dummy[j+2]-48;
+            spiMessageArrayCounter++;
+            j+=2;
+          }else if(NULL==spiMessageTx_i_dummy[j]){
+            j=256;
+            printf("End of message.");
+          }else{
+            printf("Error.");
+          }
+        }
+        
+        printf("\nThird for loop.\n");
+  
+        for (int i = 0; i < 256; ++i) {
+          spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
+        }
+
+        Serial.println("ui\n");
+        
+        for(int g=0; g<5; g++)
+        {
+          printf("%d %d ", g, spiMessageTx_ui[g]);
+        }
+
+        spiMessageTx = &spiMessageTx_ui[0];
+        
+  
+        //spiMessageTx=spiMessageTx_uip;  //using ending "[...]_uip" for better overview, but changing for further proceeding
+        //spiMessageTx should be final variable
+        Serial.println("spiMessageTx: ");
+        
+        for(int g=0; g<5; g++)
+        {
+           Serial.println(*spiMessageTx++);
         }
       }
-
-      for (int i = 0; i < 256; ++i) {
-        spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
-      }
-
-      spiMessageTx_uip = &spiMessageTx_ui[0];
-
-      spiMessageTx=spiMessageTx_uip;  //using ending "[...]_uip" for better overview, but changing for further proceeding
-      //spiMessageTx should be final variable
+      counterMessagesSent=1;
     }
     else if (request->hasParam(TEST)) {
       inputMessage = request->getParam(PARAM_COMMAND1)->value();
