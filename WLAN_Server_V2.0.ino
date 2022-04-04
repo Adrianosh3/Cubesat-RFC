@@ -183,7 +183,7 @@ uint8_t buff;
 uint8_t counterSpi=0;
 uint8_t transactionNbr=1;
 int busy = 0;
-int counterMessagesSent=0;
+int counterMessagesSent=0; 
 
 uint8_t start_message[256] = 
 {0, 3, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
