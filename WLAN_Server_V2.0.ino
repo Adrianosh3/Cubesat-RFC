@@ -1,5 +1,5 @@
 //===============================================================
-// @file:     GroundControl_V8.0
+// @file:     GroundControl_V2.0
 // @brief:    Communication CubeSat - Ground Control
 //
 // @authors:  Adrian Setka, Immanuel Weule
@@ -7,7 +7,7 @@
 // @hardware: ESP32-DevKitC V4 (ESP32-WROOM-32U)
 // @comments: Can only connect to 2,4 GHz, not to 5 GHz
 //
-// @date:     2022-01-10
+// @date:     2022-04-04
 //
 // @links:    https://randomnerdtutorials.com/esp32-esp8266-plot-chart-web-server/
 //            https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
@@ -54,8 +54,8 @@
 const char* ssid = "DemoSat"; //WiFi SSID
 const char* password = "123456789"; //WiFi password
 
-const char* http_username = "admin";  // username for login
-const char* http_password = "admin";  // password for login
+const char* http_username = "admin";  // username for website-login
+const char* http_password = "admin";  // password for website-login
 
 const char* PARAM_COMMAND1 = "inCommand1"; //Variable for commandline SPIFFS file
 const char* PARAM_COMMAND2 = "inCommand2"; // Variables for last commands
@@ -101,7 +101,6 @@ String TMS2 = "51";
 String TMS3 = "52";
 String TMS4 = "53";
 
-
 uint8_t numLog = 0; // numerator for log file
 uint8_t numError = 0; // numerator for Errors
 uint8_t counter=0;  //Counter for checking connection status in loop
@@ -111,17 +110,40 @@ AsyncWebServer server(80);  //Setup a HTTP server
 
 
 //SPI SETTINGS
-ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave;
+ESP32DMASPI::Slave slave;   //Opt.: ESP32SPISlave slave (should result in same)
 
 static const uint32_t BUFFER_SIZE = 256;
-const int RFC_Av = 17;  //Tells MCU if RFC is available or not
 uint8_t* spi_slave_tx_buf; //Is declared in function "spi(...)" as parameter
 uint8_t* spi_slave_rx_buf;
-uint8_t spiMessageTx_T[256];
-String spiMessageTx_str;
-const char* spiMessageTx_s = "Hello world.";
-const char* testnachricht = "Hello World.";
-char* spiMessageTx_cp;
+
+//Variables for data type conversion in correct order             //Conversion sequence data type wise
+String spiMessageTx_str;  //Stores received values from website   //String
+const char* spiMessageTx_s = "Hello world.";                      //char array (string)
+char* spiMessageTx_cp;                                            //char pointer
+//char spiMessageTx_c           (declared below)                  //char
+//int spiMessageTx_i_dummy[256] (declared below)                  //integer buffer
+int spiMessageTx_i[256];                                          //integer
+//uint8_t spiMessageTx_ui[256]  (declared below)                  //uint8_t
+uint8_t* spiMessageTx=0;  //Final variable for spi()              //uint8_t pointer
+
+int counterMessagesSent=0;  //To trait first message from website differently (booting message)
+
+const char* testnachricht = "Hello World."; //For testing purposes of data type conversion only
+int spiMessageArrayCounter=0;   //Counts number of entries of website message
+int spiMessageThreshhold=60;    //To check if ASCII value is number or letter (<58: Number; >64: Letter)
+
+uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
+uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
+String spiAddress=""; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
+String spiAddressPS="";
+String spiAddressComEn="";
+uint8_t spiCRC=0;
+uint8_t buff;
+uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exception for first message after reset (first spi message to MCU)
+
+int busy = 0;   //?Used only one time in receiveData()? -> Adrian
+
+
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -140,10 +162,6 @@ int spiMessageTx_i_dummy[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     
-int spiMessageTx_i[256];
-int spiMessageArrayCounter=0;
-int spiMessageThreshhold=60;    //Threshhold for distinction between numbers and letters
-uint8_t* spiMessageTx_uip;
 uint8_t spiMessageTx_ui[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -152,40 +170,9 @@ uint8_t spiMessageTx_ui[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-uint8_t spiMessage_offset=0;
 
-
-//Declaring pre-defined pins
-const int testPin = 4;  //For testing purposes only
-const int spiComENPin = 5;  //CS Pin from SPI
-
-uint8_t spi_test_counter=0;
-uint8_t spi_test_counter2=0;
-uint8_t counter_spi_connections=0; //Counter for number of spi connections to make exception for first run after reset
-
-
-
-uint8_t* spiMessageTx=0;
-uint8_t spiLength=0;  //First (spi_slave_rx_buf[0]) byte of SPI message
-uint8_t spiCI; //Second (...[1]) byte; 7: NP, 6: ADC-Flag, 5-3: reserved, 2-0: Protocol
-String spiAddress=""; //Third (...[2]) byte; 7-4: PS, 3: reserved, 2-0: ComEn
-String spiAddressPS="";
-String spiAddressComEn="";
-String spiPayload1; //Fifth (...[4]) to sixth (...[5]) byte
-String spiPayload2;
-String spiPayload3;
-String spiPayload4;
-String spiPayload5;
-String spiPayload6;
-String spiPayload7;
-uint8_t spiCRC=0; //Last (...[4+spiLength+1]) byte
-uint8_t buff;
-uint8_t counterSpi=0;
-uint8_t transactionNbr=1;
-int busy = 0;
-int counterMessagesSent=0; 
-
-uint8_t start_message[256] = 
+//Message which should be sent to MCU in first transaction
+uint8_t startMessage[256] = 
 {0, 3, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -194,6 +181,10 @@ uint8_t start_message[256] =
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+//Declaring pre-defined pins
+const int testPin = 4;  //For testing purposes only
+const int spiComENPin = 5;  //CS Pin from SPI
 
 uint8_t t_switch_payload=0;
 
@@ -204,79 +195,9 @@ String mcu_load=""; //Load of RFC in percent
 uint8_t sum=0;
 
 String testData = "";
-/*
-uint8_t spi_param_test[256] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 
-    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 
-    33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 
-    49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 
-    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 
-    81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 
-    97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 
-    113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 
-    129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 
-    145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 
-    161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 
-    177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 
-    193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 
-    209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 
-    225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
-    241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256};
-    //0 Byte, Length, ASCII "I", Table Pos., Intervall [*100 ms], Len. DP, Data0 - Data3
-    uint8_t test_config_epm[256] = 
-    {0, 15, 73, 1, 50, 11, 5, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t test_epm[256] = 
-    {4, 69, 65, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  //Laut Luca
-    uint8_t test_rfc_start[256] = 
-    {0, 3, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t test_tms[256] = 
-    {4, 65, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t test_restart[256] = 
-    {0, 3, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t test_dummy[256] = 
-    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-*/
+
+
+
 //===============================================================
 // Function declarations
 //===============================================================
@@ -305,9 +226,13 @@ void ConnectToWiFi() {
   return;
 }
 
+
+
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
+
+
 
 String readFile(fs::FS &fs, const char * path){
   Serial.printf("Reading file: %s\r\n", path);
@@ -326,6 +251,8 @@ String readFile(fs::FS &fs, const char * path){
   return fileContent;
 }
 
+
+
 void writeFile(fs::FS &fs, const char * path, const char * message){
   Serial.printf("Writing file: %s\r\n", path);
   File f = fs.open(path, "w");
@@ -341,6 +268,8 @@ void writeFile(fs::FS &fs, const char * path, const char * message){
   f.close();
 }
 
+
+
 void writeConfig(String ident) {
   String ce = (readFile(SPIFFS, ("/ce" + ident + ".txt").c_str()));
   String ps = (readFile(SPIFFS, ("/ps" + ident + ".txt").c_str()));
@@ -351,11 +280,15 @@ void writeConfig(String ident) {
   return;
 }
 
+
+
 void sendCommand() {
   const char * commandPt = (readFile(SPIFFS, "/inCommand.txt")).c_str();
   //SPI function to send command
   return;
 }
+
+
 
 String receiveData(uint8_t* rx_buf) {
     // decide wich configuration and update global variables of that module
@@ -411,7 +344,7 @@ String receiveData(uint8_t* rx_buf) {
       // if SPI receive function is an error message compareConfig = "E" = "69"
       File f = SPIFFS.open("/logA.txt", "a");
       time_t t = now();
-      f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, counter_spi_connections, hour(t), minute(t), second(t));
+      f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, spiTransactionCounter, hour(t), minute(t), second(t));
       f.close();
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
@@ -422,16 +355,11 @@ String receiveData(uint8_t* rx_buf) {
 
 
 void spi(uint8_t* spi_param){
-
-    spi_slave_tx_buf = spi_param;
-
-
-    if(counter_spi_connections == 0) {
-      spi_slave_tx_buf = start_message;
-      counter_spi_connections++;
+    //First message after reset should be "startMessage", then parameter passed by spi(...) call
+    if(spiTransactionCounter == 0) {
+      spi_slave_tx_buf = startMessage;
     } else {
-      spi_slave_tx_buf = spiMessageTx;
-      counter_spi_connections++;
+      spi_slave_tx_buf = spi_param;
     }
 
 
@@ -445,8 +373,9 @@ void spi(uint8_t* spi_param){
 
 
     //For testing purposes
-    printf("\nTransaction Nbr: %d", transactionNbr);
-    transactionNbr++;
+    printf("\nTransaction number: %d", spiTransactionCounter);
+    spiTransactionCounter++;
+
 
     //Print sent and received values
     printf("\nReceived:");
@@ -461,9 +390,12 @@ void spi(uint8_t* spi_param){
         printf("%d ", spi_slave_tx_buf[i]);
     printf("\n");
 
+
     //For further processing of received data (depending on module)
     receiveData(spi_slave_rx_buf);
 }
+
+
 
 void mcuLoad(uint8_t actualStatus){
   sum=0;
@@ -550,11 +482,6 @@ void setup(void){
   {
     mcu_log[c]=0;
   }
-
-  pinMode(RFC_Av, OUTPUT);
-  digitalWrite(RFC_Av, HIGH);
-
-
 
   //Handle Web Server
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -787,12 +714,10 @@ void setup(void){
           printf("%d %d ", g, spiMessageTx_ui[g]);
         }
 
-        spiMessageTx = &spiMessageTx_ui[0];   //Final assignment of final variable for spi
-        
-        //spiMessageTx=spiMessageTx_uip;  //using ending "[...]_uip" for better overview, but changing for further proceeding
-        //spiMessageTx should be final variable
+        spiMessageTx = &spiMessageTx_ui[0];   //Final assignment of final variable for spi transaction
+
+        //Printing converted value, which was received from website (for testing)
         Serial.println("spiMessageTx: ");
-        
         for(int g=0; g<10; g++)
         {
            Serial.println(*spiMessageTx++);
@@ -849,7 +774,7 @@ void setup(void){
   server.onNotFound(notFound);
   server.begin();
 
-  spiMessageTx = &start_message[0];
+  spiMessageTx = &startMessage[0];
   
   digitalWrite(spiComENPin, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is ready to work size
 
@@ -872,7 +797,7 @@ void setup(void){
 void loop(void){
 
   //Check if ESP is still connected to WiFi and reconnect if connection was lost
-  if(counter>120) { //Dont check connection status in every loop (for better runtime)
+  if(counter>120) { //Dont check connection status in every loop (runtime)
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("WiFi not connected. Try to reconnect...");
       ConnectToWiFi();
@@ -882,7 +807,7 @@ void loop(void){
     counter++;
   }
 
-  //First time spiMessageTx should be start_message, then website input
+  //First time spiMessageTx should be startMessage, then website input
   spi(spiMessageTx);
   
   //To access your stored values
