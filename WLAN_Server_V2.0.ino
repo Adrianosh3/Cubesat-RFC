@@ -125,6 +125,8 @@ uint8_t* spiMessageTx=0;  //Final variable for spi()              //uint8_t poin
 
 int counterMessagesSent=0;  //To trait first message from website differently (booting message)
 
+uint8_t *spiParamMemory=0;  //Remember last sent message
+
 const char* testnachricht = "Hello World."; //For testing purposes of data type conversion only
 int spiMessageArrayCounter=0;   //Counts number of entries of website message
 int spiMessageThreshhold=60;    //To check if ASCII value is number or letter (<58: Number; >64: Letter)
@@ -138,7 +140,9 @@ uint8_t spiCRC=0;
 uint8_t buff;
 uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exception for first message after reset (first spi message to MCU)
 
-int rfcbusynotbusy = 0; //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
+int busy = 0;   //?Used only one time in receiveData()? -> Adrian
+
+int rfcbusynotbusy = 0;
 
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -316,8 +320,6 @@ void sendCommand() {
 
 String receiveData(uint8_t* rx_buf) {
     // decide wich configuration and update global variables of that module
-    
-    digitalWrite(mcuComENPin, LOW);  //RFC not available for SPI transaction with MCU until receiveData() is finished
 
     spiLength=spi_slave_rx_buf[0];                                    // Data package length
     spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
@@ -375,29 +377,22 @@ String receiveData(uint8_t* rx_buf) {
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
-  
-    digitalWrite(mcuComENPin, HIGH);  //RFC available for SPI transaction with MCU again
-
+    busy = 0;
 }
 
 
 
 void spi(uint8_t *spiParam){
 
-    uint8_t *spiParamMemory;  //Remember last sent message
-    
     //First message after reset should be "startMessage", then parameter passed by spi(...) call
     printf("\nSPI start.\n");
     if(spiTransactionCounter == 0) {  //First transaction is 0. transaction
       spi_slave_tx_buf = startMessage;
     } else {
-      if(spiParam == spiParamMemory){
-        spi_slave_tx_buf = emptyMessage;
-      }else{
-        spi_slave_tx_buf = spiParam;
-      }
+      spi_slave_tx_buf = spiParam;
     }
 /*
+ * Guru Meditation Error, if following code gets executed, dont know why
     //Print spiMessageTx, for testing purposes only
     Serial.println("spiMessageTx: ");
     for(int g=0; g<10; g++)
@@ -408,6 +403,9 @@ void spi(uint8_t *spiParam){
 */
     printf("\nZuweisung tx_buf abgeschlossen.\n");
 
+    //spiParamMemory = spi_slave_tx_buf;  //Not needed, "spiMessageTx = emptyMessage" should be enough
+    spiMessageTx = &emptyMessage[0];  //Reset spiMessageTx, so same message doesn't get sent twice; has to be done, before spi transaction, bc rfc waits for spi transaction
+    
     //Here spi_slave_rx_buf is received and spi_slave_tx_buf is being queued, waiting to be sent
     if (slave.remained() == 0)
     {
@@ -416,12 +414,9 @@ void spi(uint8_t *spiParam){
       printf("\nSlave remained.\n");
     }
 
-    spiParamMemory = spi_slave_tx_buf;
-
     //For testing purposes
     printf("\nTransaction number: %d\n", spiTransactionCounter);
     spiTransactionCounter++;
-
 
     //Print sent and received values
     printf("\nReceived:");
@@ -694,11 +689,12 @@ void setup(void){
       spiMessageTx_str = readFile(SPIFFS, ("/inCommand1.txt"));
       
       //Don't process received data first time, since website sends start message, which has not to be converted
+      //if (spiMessageTx_str != "File system ready!") {
       if ( counterMessagesSent > 0) {
         spiMessageTx_s = spiMessageTx_str.c_str();      
             
         //For testing of data conversion only
-        Serial.println("spiMessageTx_s");  
+        Serial.println("spiMessageTx_s");
         Serial.println(spiMessageTx_s);
         Serial.println("testnachricht");
         Serial.println(testnachricht);
