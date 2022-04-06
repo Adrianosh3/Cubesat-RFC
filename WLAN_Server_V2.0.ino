@@ -138,9 +138,7 @@ uint8_t spiCRC=0;
 uint8_t buff;
 uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exception for first message after reset (first spi message to MCU)
 
-int busy = 0;   //?Used only one time in receiveData()? -> Adrian
-
-int rfcbusynotbusy = 0;
+int rfcbusynotbusy = 0; //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
 
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -318,6 +316,8 @@ void sendCommand() {
 
 String receiveData(uint8_t* rx_buf) {
     // decide wich configuration and update global variables of that module
+    
+    digitalWrite(mcuComENPin, LOW);  //RFC not available for SPI transaction with MCU until receiveData() is finished
 
     spiLength=spi_slave_rx_buf[0];                                    // Data package length
     spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
@@ -375,7 +375,9 @@ String receiveData(uint8_t* rx_buf) {
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
-    busy = 0;
+  
+    digitalWrite(mcuComENPin, HIGH);  //RFC available for SPI transaction with MCU again
+
 }
 
 
