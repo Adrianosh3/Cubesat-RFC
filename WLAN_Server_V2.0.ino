@@ -44,15 +44,12 @@
 
 #include <ESP32DMASPISlave.h>
 
-//Set WiFi SSID and password
-//const char* ssid = "5 Euro/min"; //WiFi SSID
-//const char* password = "Wir haben kein Passwort!420"; //WiFi password
-//const char* ssid = "Apartment 322"; //WiFi SSID
-//const char* password = "06456469822825645048"; //WiFi password
-
-//For Wi-Fi hotspot
+//For Wi-Fi hotspot from Laptop
 const char* ssid = "DemoSat"; //WiFi SSID
 const char* password = "123456789"; //WiFi password
+//For Wi-Fi from uni
+//const char* ssid = "DemoSat-WLAN"; //WiFi SSID
+//const char* password = "24337243"; //WiFi password
 
 const char* http_username = "admin";  // username for website-login
 const char* http_password = "admin";  // password for website-login
@@ -143,6 +140,7 @@ uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exc
 
 int busy = 0;   //?Used only one time in receiveData()? -> Adrian
 
+int rfcbusynotbusy = 0;
 
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -171,7 +169,7 @@ uint8_t spiMessageTx_ui[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-//Message which should be sent to MCU in first transaction
+//Should be sent to MCU in first transaction
 uint8_t startMessage[256] = 
 {0, 3, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -182,9 +180,37 @@ uint8_t startMessage[256] =
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+//Should be sent if there is no new message to be sent
+uint8_t emptyMessage[256] = 
+{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+//Only for testing purposes
+uint8_t spi_param_test[256] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 
+    33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 
+    49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 
+    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 
+    81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 
+    97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 
+    113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 
+    129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 
+    145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 
+    161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 
+    177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 
+    193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 
+    209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 
+    225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
+    241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256};
+
 //Declaring pre-defined pins
-const int testPin = 4;  //For testing purposes only
-const int spiComENPin = 5;  //CS Pin from SPI
+const int mcuComENPin = 4;  //CS Pin from SPI (IO number, not pin number)
 
 uint8_t t_switch_payload=0;
 
@@ -354,26 +380,44 @@ String receiveData(uint8_t* rx_buf) {
 
 
 
-void spi(uint8_t* spi_param){
+void spi(uint8_t *spiParam){
+
+    uint8_t *spiParamMemory;  //Remember last sent message
+    
     //First message after reset should be "startMessage", then parameter passed by spi(...) call
-    if(spiTransactionCounter == 0) {
+    printf("\nSPI start.\n");
+    if(spiTransactionCounter == 0) {  //First transaction is 0. transaction
       spi_slave_tx_buf = startMessage;
     } else {
-      spi_slave_tx_buf = spi_param;
+      if(spiParam == spiParamMemory){
+        spi_slave_tx_buf = emptyMessage;
+      }else{
+        spi_slave_tx_buf = spiParam;
+      }
     }
-
+/*
+    //Print spiMessageTx, for testing purposes only
+    Serial.println("spiMessageTx: ");
+    for(int g=0; g<10; g++)
+    {
+       Serial.println(*spiMessageTx++);
+    }
+    printf("\n");
+*/
+    printf("\nZuweisung tx_buf abgeschlossen.\n");
 
     //Here spi_slave_rx_buf is received and spi_slave_tx_buf is being queued, waiting to be sent
     if (slave.remained() == 0)
     {
       slave.queue(spi_slave_rx_buf, spi_slave_tx_buf, BUFFER_SIZE);
       slave.yield();
-      printf("Slave remained");
+      printf("\nSlave remained.\n");
     }
 
+    spiParamMemory = spi_slave_tx_buf;
 
     //For testing purposes
-    printf("\nTransaction number: %d", spiTransactionCounter);
+    printf("\nTransaction number: %d\n", spiTransactionCounter);
     spiTransactionCounter++;
 
 
@@ -390,6 +434,7 @@ void spi(uint8_t* spi_param){
         printf("%d ", spi_slave_tx_buf[i]);
     printf("\n");
 
+    printf("\nEnd of SPI transaction.\n(receiveData following)\n");
 
     //For further processing of received data (depending on module)
     receiveData(spi_slave_rx_buf);
@@ -397,6 +442,7 @@ void spi(uint8_t* spi_param){
 
 
 
+//Not working anymore/yet
 void mcuLoad(uint8_t actualStatus){
   sum=0;
   //Shift array one byte to the right, so a new value can be added to the array
@@ -432,15 +478,18 @@ void set_buffer() {
 
 void setup(void){
 
+  
+  pinMode(mcuComENPin, OUTPUT);
+  digitalWrite(mcuComENPin, HIGH);
+  
+  delay(10);  
+
+  //Write SPI CS pin low, to signal MCU that RFC is not ready to send/receive messages yet
+  digitalWrite(mcuComENPin, LOW);
+  
   Serial.begin(115200); //Open a serial connection
   Serial.println("Booting...");
   
-  delay(1);
-
-  //Write SPI CS pin low, to signal MCU that RFC is not ready to send/receive messages yet
-  pinMode(spiComENPin, OUTPUT);
-  digitalWrite(spiComENPin, LOW);
-
   //Initialize SPIFFS
   if(!SPIFFS.begin(true)){
     Serial.println("An Error has occurred while mounting SPIFFS");
@@ -474,9 +523,8 @@ void setup(void){
    return;
   }
 
-  //Need of following two lines not known
-  //spi_slave_tx_buf = slave.allocDMABuffer(BUFFER_SIZE);
-  //spi_slave_rx_buf = slave.allocDMABuffer(BUFFER_SIZE);
+  spi_slave_tx_buf = slave.allocDMABuffer(BUFFER_SIZE);
+  spi_slave_rx_buf = slave.allocDMABuffer(BUFFER_SIZE);
 
   for(int c=0; c<mcu_log_size; c++)
   {
@@ -706,8 +754,6 @@ void setup(void){
         for (int i = 0; i < 256; ++i) {
           spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
         }
-
-        Serial.println("ui\n");
         
         for(int g=0; g<5; g++)
         {
@@ -774,9 +820,9 @@ void setup(void){
   server.onNotFound(notFound);
   server.begin();
 
-  spiMessageTx = &startMessage[0];
+  spiMessageTx = &emptyMessage[0];
   
-  digitalWrite(spiComENPin, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is ready to work size
+  digitalWrite(mcuComENPin, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is ready to work size
 
   slave.setDataMode(SPI_MODE3);
   slave.setMaxTransferSize(BUFFER_SIZE);
@@ -807,8 +853,19 @@ void loop(void){
     counter++;
   }
 
-  //First time spiMessageTx should be startMessage, then website input
   spi(spiMessageTx);
+
+  //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
+  if(rfcbusynotbusy == 0)
+  {
+    printf("\nRFC busy.");
+    digitalWrite(mcuComENPin, HIGH);
+    rfcbusynotbusy = 1;
+  }else{
+    printf("\nRFC not busy.");
+    digitalWrite(mcuComENPin, LOW); 
+    rfcbusynotbusy = 0;
+  }
   
   //To access your stored values
   //readFile(SPIFFS, "/configEPM.txt");
