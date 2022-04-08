@@ -193,6 +193,46 @@ uint8_t emptyMessage[256] =
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+
+//For testing purposes only
+uint8_t messageCounter=0;
+uint8_t firstMessage[256] = 
+{0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t secondMessage[256] = 
+{0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t thirdMessage[256] = 
+{0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t fourthMessage[256] = 
+{0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 //Only for testing purposes
 uint8_t spi_param_test[256] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 
     17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 
@@ -318,41 +358,42 @@ void sendCommand() {
 
 
 
-String receiveData(uint8_t* rx_buf) {
+void receiveData() {
     // decide wich configuration and update global variables of that module
 
     spiLength=spi_slave_rx_buf[0];                                    // Data package length
     spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
 
-    spiAddressComEn = String((rx_buf[2] & 0b11110000) >> 4);
-    spiAddressPS = String((rx_buf[2] & 0b00001111));
+    spiAddressComEn = String((spi_slave_rx_buf[2] & 0b11110000) >> 4);
+    spiAddressPS = String((spi_slave_rx_buf[2] & 0b00001111));
     String compareConfig = spiAddressPS+spiAddressComEn;
-    spiCRC = rx_buf[2+spiLength+1];
-  
+    spiCRC = spi_slave_rx_buf[2+spiLength+1];
+
+
     if (conf1 == compareConfig) {
       //EPM
 
-      EPM1 = String(rx_buf[3] & 0b00000001);
-      EPM2 = String(rx_buf[3] & 0b00000010);
-      EPM3 = String(rx_buf[3] & 0b00000100);
-      EPM4 = String(rx_buf[3] & 0b00001000);
+      EPM1 = String(spi_slave_rx_buf[3] & 0b00000001);
+      EPM2 = String(spi_slave_rx_buf[3] & 0b00000010);
+      EPM3 = String(spi_slave_rx_buf[3] & 0b00000100);
+      EPM4 = String(spi_slave_rx_buf[3] & 0b00001000);
 
       printf("\nTransfer to Website.\nconf1: %s\n", conf1);
-      return conf1;
+      //return conf1;
     } else if (conf2 == compareConfig) {
       //ODC
 
-      ODC1 = String(rx_buf[11] << 8 | rx_buf[12]);      // Phototransistors
-      ODC2 = String(rx_buf[13] << 8 | rx_buf[14]);      // ^
-      ODC3 = String(rx_buf[15] << 8 | rx_buf[16]);      // ^
-      ODC4 = String(rx_buf[17] << 8 | rx_buf[18]);      // ^
-      ODC5 = String(rx_buf[19] << 8 | rx_buf[20]);      // ^
-      ODC6 = String(rx_buf[21] << 8 | rx_buf[22]);      // ^
-      ODC7 = String(rx_buf[7] << 24 | rx_buf[8] << 16 | rx_buf[9] << 8 | rx_buf[10]);      // Runtime
+      ODC1 = String(spi_slave_rx_buf[11] << 8 | spi_slave_rx_buf[12]);      // Phototransistors
+      ODC2 = String(spi_slave_rx_buf[13] << 8 | spi_slave_rx_buf[14]);      // ^
+      ODC3 = String(spi_slave_rx_buf[15] << 8 | spi_slave_rx_buf[16]);      // ^
+      ODC4 = String(spi_slave_rx_buf[17] << 8 | spi_slave_rx_buf[18]);      // ^
+      ODC5 = String(spi_slave_rx_buf[19] << 8 | spi_slave_rx_buf[20]);      // ^
+      ODC6 = String(spi_slave_rx_buf[21] << 8 | spi_slave_rx_buf[22]);      // ^
+      ODC7 = String(spi_slave_rx_buf[7] << 24 | spi_slave_rx_buf[8] << 16 | spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);      // Runtime
       
 
       printf("\nTransfer to Website.\nconf2: %s\n", conf2);
-      return conf2;
+      //return conf2;
     } else if (conf3 == compareConfig) {
       //TMS
 
@@ -362,12 +403,12 @@ String receiveData(uint8_t* rx_buf) {
       TMS4 = String(spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);
 
       printf("\nTransfer to Website.\nconf3: %s\n", conf3);
-      return conf3;
+      //return conf3;
     } else if (conf4 == compareConfig) {
       //PAY
 
       printf("\nNo payload installed.");
-      return conf4;
+      //return conf4;
     } else if (compareConfig == "69"){                                                   
       // if SPI receive function is an error message compareConfig = "E" = "69"
       File f = SPIFFS.open("/logA.txt", "a");
@@ -377,7 +418,7 @@ String receiveData(uint8_t* rx_buf) {
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
-    busy = 0;
+    
 }
 
 
@@ -391,36 +432,52 @@ void spi(uint8_t *spiParam){
     } else {
       spi_slave_tx_buf = spiParam;
     }
-/*
- * Guru Meditation Error, if following code gets executed, dont know why
+      
     //Print spiMessageTx, for testing purposes only
-    Serial.println("spiMessageTx: ");
+    Serial.println("\nspiMessageTx: ");
     for(int g=0; g<10; g++)
     {
-       Serial.println(*spiMessageTx++);
+       printf("%p ", spiMessageTx[g]);
     }
+    
     printf("\n");
-*/
-    printf("\nZuweisung tx_buf abgeschlossen.\n");
+
+    //Print spi_slave_tx_buf, for testing purposes only
+    Serial.println("\nspi_slave_tx_buf: ");
+    for(int g=0; g<10; g++)
+    {
+       printf("%p ", spi_slave_tx_buf[g]);
+    }
+
+    printf("\n");
+    //printf("Zuweisung tx_buf abgeschlossen.\n");
 
     //spiParamMemory = spi_slave_tx_buf;  //Not needed, "spiMessageTx = emptyMessage" should be enough
-    spiMessageTx = &emptyMessage[0];  //Reset spiMessageTx, so same message doesn't get sent twice; has to be done, before spi transaction, bc rfc waits for spi transaction
+    spiMessageTx = &emptyMessage[0];  //Reset spiMessageTx, so same message doesn't get sent twice; has to be done, before spi transaction, bc rfc waits for spi transaction    
+    
+    //Print spiMessageTx, for testing purposes only
+    Serial.println("\nspiMessageTx: ");
+    for(int g=0; g<10; g++)
+    {
+       printf("%p ", spiMessageTx[g]);
+    }
     
     //Here spi_slave_rx_buf is received and spi_slave_tx_buf is being queued, waiting to be sent
+    
     if (slave.remained() == 0)
     {
       slave.queue(spi_slave_rx_buf, spi_slave_tx_buf, BUFFER_SIZE);
       slave.yield();
       printf("\nSlave remained.\n");
     }
-
+    
     //For testing purposes
     printf("\nTransaction number: %d\n", spiTransactionCounter);
     spiTransactionCounter++;
 
     //Print sent and received values
     printf("\nReceived:");
-    //Show received data (if needed)
+    //Show received data
     for (uint16_t i = 0; i < BUFFER_SIZE; ++i)
         printf("%d ", spi_slave_rx_buf[i]);
     printf("\n");
@@ -431,10 +488,11 @@ void spi(uint8_t *spiParam){
         printf("%d ", spi_slave_tx_buf[i]);
     printf("\n");
 
-    printf("\nEnd of SPI transaction.\n(receiveData following)\n");
+    printf("\nEnd of SPI transaction.\n");
 
     //For further processing of received data (depending on module)
-    receiveData(spi_slave_rx_buf);
+    receiveData();
+    
 }
 
 
@@ -764,8 +822,10 @@ void setup(void){
         Serial.println("spiMessageTx: ");
         for(int g=0; g<10; g++)
         {
-           Serial.println(*spiMessageTx++);
+          printf("%p ", spiMessageTx[g]);
         }
+
+        printf("\nEnd of conversion.\n");
 
       }
       counterMessagesSent=1;  //First message (start message from website) has been sent
@@ -818,7 +878,7 @@ void setup(void){
   server.onNotFound(notFound);
   server.begin();
 
-  spiMessageTx = &emptyMessage[0];
+  //spiMessageTx = &emptyMessage[0];
   
   digitalWrite(mcuComENPin, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is ready to work size
 
@@ -850,20 +910,43 @@ void loop(void){
   } else {
     counter++;
   }
-
+  
   spi(spiMessageTx);
-
+  
+/*
   //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
   if(rfcbusynotbusy == 0)
   {
-    printf("\nRFC busy.");
+    printf("\nLoop:\nRFC busy.\n");
     digitalWrite(mcuComENPin, HIGH);
     rfcbusynotbusy = 1;
   }else{
-    printf("\nRFC not busy.");
+    printf("\nLoop:\nRFC not busy.\n");
     digitalWrite(mcuComENPin, LOW); 
     rfcbusynotbusy = 0;
   }
+  */
+/*
+  if(messageCounter == 0){
+    spiMessageTx=firstMessage;
+    messageCounter++;
+  }else if(messageCounter == 1){
+    messageCounter++;
+  }else if(messageCounter == 2){
+    spiMessageTx=secondMessage;
+    messageCounter++;
+  }else if(messageCounter == 3){
+    messageCounter++;
+  }else if(messageCounter == 4){
+    spiMessageTx=thirdMessage;
+    messageCounter++;
+  }else if(messageCounter == 5){
+    messageCounter++;
+  }else{
+    spiMessageTx=fourthMessage;
+    messageCounter=0;
+  }
+*/
   
   //To access your stored values
   //readFile(SPIFFS, "/configEPM.txt");
