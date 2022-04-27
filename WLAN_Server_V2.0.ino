@@ -143,7 +143,7 @@ uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exc
 int busy = 0;   //?Used only one time in receiveData()? -> Adrian
 
 int rfcbusynotbusy = 0;
-
+     
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -432,7 +432,8 @@ void spi(uint8_t *spiParam){
     } else {
       spi_slave_tx_buf = spiParam;
     }
-      
+
+    /*  
     //Print spiMessageTx, for testing purposes only
     Serial.println("\nspiMessageTx: ");
     for(int g=0; g<10; g++)
@@ -448,7 +449,7 @@ void spi(uint8_t *spiParam){
     {
        printf("%p ", spi_slave_tx_buf[g]);
     }
-
+*/
     printf("\n");
     //printf("Zuweisung tx_buf abgeschlossen.\n");
 
@@ -648,6 +649,7 @@ void setup(void){
     request->send_P(200, "text/plain", TMS4.c_str());
   });
 
+  /* Too much server.on functions, commented out for better runtime; pay functions not needed, since no payload is implemented yet
   // PAY
   server.on("/payValue1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", PAY1.c_str());
@@ -661,6 +663,7 @@ void setup(void){
   server.on("/payValue4", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", PAY4.c_str());
   });
+  */
 
   //Commands
   server.on("/command1", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -774,24 +777,25 @@ void setup(void){
         }
           
         printf("\n\nSecond for loop.\n");  //For testing of data conversion only
-  
+
+        //Conversion only handles entries without "space" and if bytes are seperated with a comma
         for(int j=0; j<256; j++)
         {
           printf("\n[%d] %d ", j, spiMessageTx_i_dummy[j]);
-          if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)
+          if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)  //If current (j) sign is a comma
           {
             //Do nothing (it's a comma)
-          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+1 sign is a comma and a single digit number
             spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j]-48;
             spiMessageArrayCounter++;
-          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){ //If j+1 sign is a comma and a letter
             spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j];
             spiMessageArrayCounter++;
-          }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+2 sign is a comma -> double digit
             spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*10 + spiMessageTx_i_dummy[j+1]-48;
             spiMessageArrayCounter++;
             j++;
-          }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+2 sign is a comma -> triple digit
             spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*100 + (spiMessageTx_i_dummy[j+1]-48)*10 + spiMessageTx_i_dummy[j+2]-48;
             spiMessageArrayCounter++;
             j+=2;
@@ -912,6 +916,8 @@ void loop(void){
   }
   
   spi(spiMessageTx);
+  
+  delay(5000);
   
 /*
   //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
