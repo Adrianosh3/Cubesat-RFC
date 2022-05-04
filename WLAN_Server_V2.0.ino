@@ -45,11 +45,11 @@
 #include <ESP32DMASPISlave.h>
 
 //For Wi-Fi hotspot from Laptop
-const char* ssid = "DemoSat"; //WiFi SSID
-const char* password = "123456789"; //WiFi password
+//const char* ssid = "DemoSat"; //WiFi SSID
+//const char* password = "123456789"; //WiFi password
 //For Wi-Fi from uni
-//const char* ssid = "DemoSat-WLAN"; //WiFi SSID
-//const char* password = "24337243"; //WiFi password
+const char* ssid = "DemoSat-WLAN"; //WiFi SSID
+const char* password = "24337243"; //WiFi password
 
 const char* http_username = "admin";  // username for website-login
 const char* http_password = "admin";  // password for website-login
@@ -917,7 +917,7 @@ void loop(void){
   
   spi(spiMessageTx);
   
-  delay(5000);
+  //delay(5000);
   
 /*
   //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
