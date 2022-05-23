@@ -3,13 +3,10 @@ ___________________________________________________
 <ins>To do:</ins>
 
 Adrian:
-- Path for 5 measurements per module!
-- Module setter for request frequency (in sec)
+- Path for 5 measurements per module
 
 Immi:
-- Send and receive function for every module
 - initialization function (frequency setter when initilized)
-- AvPin auf 1 setzen, wenn RFC rechnet, danach wieder auf 0
 ___________________________________________________
 
 
@@ -26,6 +23,8 @@ ___________________________________________________
 
 ___________________________________________________
 <ins>Done:</ins>
+- Send and receive function for every module
+- AvPin auf 1 setzen, wenn RFC rechnet, danach wieder auf 0
 - Initialisierungstabelle für Anschlussart!
 - Log files for sensordata with timestamp
 - Login
