@@ -500,6 +500,17 @@ void spi(uint8_t *spiParam){
         printf("%d ", spi_slave_rx_buf[i]);
     printf("\n");
 
+    /*
+    char* spi_slave_rx_buf_str = "";
+
+    writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
+    writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
+    writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
+    writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
+    writeFile(SPIFFS, "/inCommand1.txt", spi_slave_rx_buf_str);
+
+    */
+
     printf("Transmitted:");
     //Show transmitted data
     for (uint16_t i = 0; i < BUFFER_SIZE; ++i)
