@@ -48,8 +48,10 @@
 //const char* ssid = "DemoSat"; //WiFi SSID
 //const char* password = "123456789"; //WiFi password
 //For Wi-Fi from uni
-const char* ssid = "DemoSat-WLAN"; //WiFi SSID
-const char* password = "24337243"; //WiFi password
+//const char* ssid = "DemoSat-WLAN"; //WiFi SSID
+//const char* password = "24337243"; //WiFi password
+const char* ssid = "Apartment 322"; //WiFi SSID
+const char* password = "06456469822825645048"; //WiFi password
 
 const char* http_username = "admin";  // username for website-login
 const char* http_password = "admin";  // password for website-login
@@ -98,6 +100,8 @@ String TMS2 = "51";
 String TMS3 = "52";
 String TMS4 = "53";
 
+uint8_t numSPIReceived = 0; // numerator for received SPI messages which are not dummy messages
+uint8_t numSPISent = 0; // numerator for sent SPI messages which are not dummy messages
 uint8_t numLog = 0; // numerator for log file
 uint8_t numError = 0; // numerator for Errors
 uint8_t counter=0;  //Counter for checking connection status in loop
@@ -411,9 +415,22 @@ void receiveData() {
       //return conf4;
     } else if (compareConfig == "69"){                                                   
       // if SPI receive function is an error message compareConfig = "E" = "69"
-      File f = SPIFFS.open("/logA.txt", "a");
+      File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, spiTransactionCounter, hour(t), minute(t), second(t));
+      numError++;
+      f.close();
+    } else if (!(spiLength == 0 && spiCI == 1)){
+      // if SPI receive function is not a dummy message (0 1 0 0 ...)
+      File f = SPIFFS.open("/logStatus.txt", "a");
+      time_t t = now();
+      f.printf("Received SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPIReceived, spiTransactionCounter, hour(t), minute(t), second(t));
+      for(int i = 0; i <= spiLength; i++)
+      {
+        f.printf("%d ", spi_slave_rx_buf[i]);
+      }
+      f.printf("\n\n");
+      numSPIReceived++;
       f.close();
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
@@ -748,6 +765,12 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
       spiMessageTx_str = readFile(SPIFFS, ("/inCommand1.txt"));
+      File f = SPIFFS.open("/logStatus.txt", "a");
+      time_t t = now();
+      f.printf("Sent SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPISent, spiTransactionCounter, hour(t), minute(t), second(t));
+      f.printf("%s\n", spiMessageTx_str.c_str());
+      numSPISent++;
+      f.close();
       
       //Don't process received data first time, since website sends start message, which has not to be converted
       //if (spiMessageTx_str != "File system ready!") {
