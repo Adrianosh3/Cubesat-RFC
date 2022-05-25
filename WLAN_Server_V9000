@@ -45,11 +45,11 @@
 #include <ESP32DMASPISlave.h>
 
 //For Wi-Fi hotspot from Laptop
-const char* ssid = "DemoSat"; //WiFi SSID
-const char* password = "123456789"; //WiFi password
+//const char* ssid = "DemoSat"; //WiFi SSID
+//const char* password = "123456789"; //WiFi password
 //For Wi-Fi from uni
-//const char* ssid = "DemoSat-WLAN"; //WiFi SSID
-//const char* password = "24337243"; //WiFi password
+const char* ssid = "DemoSat-WLAN"; //WiFi SSID
+const char* password = "24337243"; //WiFi password
 
 const char* http_username = "admin";  // username for website-login
 const char* http_password = "admin";  // password for website-login
@@ -143,7 +143,7 @@ uint8_t spiTransactionCounter=0; //Counts numbers of spi transactions; makes exc
 int busy = 0;   //?Used only one time in receiveData()? -> Adrian
 
 int rfcbusynotbusy = 0;
-
+     
 char spiMessageTx_c[256]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -358,41 +358,42 @@ void sendCommand() {
 
 
 
-String receiveData(uint8_t* rx_buf) {
+void receiveData() {
     // decide wich configuration and update global variables of that module
 
     spiLength=spi_slave_rx_buf[0];                                    // Data package length
     spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
 
-    spiAddressComEn = String((rx_buf[2] & 0b11110000) >> 4);
-    spiAddressPS = String((rx_buf[2] & 0b00001111));
+    spiAddressComEn = String((spi_slave_rx_buf[2] & 0b11110000) >> 4);
+    spiAddressPS = String((spi_slave_rx_buf[2] & 0b00001111));
     String compareConfig = spiAddressPS+spiAddressComEn;
-    spiCRC = rx_buf[2+spiLength+1];
-  
+    spiCRC = spi_slave_rx_buf[2+spiLength+1];
+
+
     if (conf1 == compareConfig) {
       //EPM
 
-      EPM1 = String(rx_buf[3] & 0b00000001);
-      EPM2 = String(rx_buf[3] & 0b00000010);
-      EPM3 = String(rx_buf[3] & 0b00000100);
-      EPM4 = String(rx_buf[3] & 0b00001000);
+      EPM1 = String(spi_slave_rx_buf[3] & 0b00000001);
+      EPM2 = String(spi_slave_rx_buf[3] & 0b00000010);
+      EPM3 = String(spi_slave_rx_buf[3] & 0b00000100);
+      EPM4 = String(spi_slave_rx_buf[3] & 0b00001000);
 
       printf("\nTransfer to Website.\nconf1: %s\n", conf1);
-      return conf1;
+      //return conf1;
     } else if (conf2 == compareConfig) {
       //ODC
 
-      ODC1 = String(rx_buf[11] << 8 | rx_buf[12]);      // Phototransistors
-      ODC2 = String(rx_buf[13] << 8 | rx_buf[14]);      // ^
-      ODC3 = String(rx_buf[15] << 8 | rx_buf[16]);      // ^
-      ODC4 = String(rx_buf[17] << 8 | rx_buf[18]);      // ^
-      ODC5 = String(rx_buf[19] << 8 | rx_buf[20]);      // ^
-      ODC6 = String(rx_buf[21] << 8 | rx_buf[22]);      // ^
-      ODC7 = String(rx_buf[7] << 24 | rx_buf[8] << 16 | rx_buf[9] << 8 | rx_buf[10]);      // Runtime
+      ODC1 = String(spi_slave_rx_buf[11] << 8 | spi_slave_rx_buf[12]);      // Phototransistors
+      ODC2 = String(spi_slave_rx_buf[13] << 8 | spi_slave_rx_buf[14]);      // ^
+      ODC3 = String(spi_slave_rx_buf[15] << 8 | spi_slave_rx_buf[16]);      // ^
+      ODC4 = String(spi_slave_rx_buf[17] << 8 | spi_slave_rx_buf[18]);      // ^
+      ODC5 = String(spi_slave_rx_buf[19] << 8 | spi_slave_rx_buf[20]);      // ^
+      ODC6 = String(spi_slave_rx_buf[21] << 8 | spi_slave_rx_buf[22]);      // ^
+      ODC7 = String(spi_slave_rx_buf[7] << 24 | spi_slave_rx_buf[8] << 16 | spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);      // Runtime
       
 
       printf("\nTransfer to Website.\nconf2: %s\n", conf2);
-      return conf2;
+      //return conf2;
     } else if (conf3 == compareConfig) {
       //TMS
 
@@ -402,12 +403,12 @@ String receiveData(uint8_t* rx_buf) {
       TMS4 = String(spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);
 
       printf("\nTransfer to Website.\nconf3: %s\n", conf3);
-      return conf3;
+      //return conf3;
     } else if (conf4 == compareConfig) {
       //PAY
 
       printf("\nNo payload installed.");
-      return conf4;
+      //return conf4;
     } else if (compareConfig == "69"){                                                   
       // if SPI receive function is an error message compareConfig = "E" = "69"
       File f = SPIFFS.open("/logA.txt", "a");
@@ -417,7 +418,7 @@ String receiveData(uint8_t* rx_buf) {
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
-    busy = 0;
+    
 }
 
 
@@ -431,9 +432,8 @@ void spi(uint8_t *spiParam){
     } else {
       spi_slave_tx_buf = spiParam;
     }
-/*
- * Guru Meditation Error, if following code gets executed, dont know why
-*/    
+
+    /*  
     //Print spiMessageTx, for testing purposes only
     Serial.println("\nspiMessageTx: ");
     for(int g=0; g<10; g++)
@@ -448,9 +448,8 @@ void spi(uint8_t *spiParam){
     for(int g=0; g<10; g++)
     {
        printf("%p ", spi_slave_tx_buf[g]);
-       printf(" ");
     }
-
+*/
     printf("\n");
     //printf("Zuweisung tx_buf abgeschlossen.\n");
 
@@ -462,25 +461,24 @@ void spi(uint8_t *spiParam){
     for(int g=0; g<10; g++)
     {
        printf("%p ", spiMessageTx[g]);
-       printf(" ");
     }
     
     //Here spi_slave_rx_buf is received and spi_slave_tx_buf is being queued, waiting to be sent
-    /*
+    
     if (slave.remained() == 0)
     {
       slave.queue(spi_slave_rx_buf, spi_slave_tx_buf, BUFFER_SIZE);
       slave.yield();
       printf("\nSlave remained.\n");
     }
-    */
+    
     //For testing purposes
     printf("\nTransaction number: %d\n", spiTransactionCounter);
     spiTransactionCounter++;
-/*
+
     //Print sent and received values
     printf("\nReceived:");
-    //Show received data (if needed)
+    //Show received data
     for (uint16_t i = 0; i < BUFFER_SIZE; ++i)
         printf("%d ", spi_slave_rx_buf[i]);
     printf("\n");
@@ -490,11 +488,12 @@ void spi(uint8_t *spiParam){
     for (uint16_t i = 0; i < BUFFER_SIZE; ++i)
         printf("%d ", spi_slave_tx_buf[i]);
     printf("\n");
-*/
+
     printf("\nEnd of SPI transaction.\n");
 
     //For further processing of received data (depending on module)
-    //receiveData(spi_slave_rx_buf);
+    receiveData();
+    
 }
 
 
@@ -650,6 +649,7 @@ void setup(void){
     request->send_P(200, "text/plain", TMS4.c_str());
   });
 
+  /* Too much server.on functions, commented out for better runtime; pay functions not needed, since no payload is implemented yet
   // PAY
   server.on("/payValue1", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", PAY1.c_str());
@@ -663,6 +663,7 @@ void setup(void){
   server.on("/payValue4", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", PAY4.c_str());
   });
+  */
 
   //Commands
   server.on("/command1", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -776,24 +777,25 @@ void setup(void){
         }
           
         printf("\n\nSecond for loop.\n");  //For testing of data conversion only
-  
+
+        //Conversion only handles entries without "space" and if bytes are seperated with a comma
         for(int j=0; j<256; j++)
         {
           printf("\n[%d] %d ", j, spiMessageTx_i_dummy[j]);
-          if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)
+          if((','==spiMessageTx_i_dummy[j]) && spiMessageTx_i_dummy[j] < spiMessageThreshhold)  //If current (j) sign is a comma
           {
             //Do nothing (it's a comma)
-          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+1 sign is a comma and a single digit number
             spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j]-48;
             spiMessageArrayCounter++;
-          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+1] && spiMessageTx_i_dummy[j] > spiMessageThreshhold){ //If j+1 sign is a comma and a letter
             spiMessageTx_i[spiMessageArrayCounter]=spiMessageTx_i_dummy[j];
             spiMessageArrayCounter++;
-          }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+2] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+2 sign is a comma -> double digit
             spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*10 + spiMessageTx_i_dummy[j+1]-48;
             spiMessageArrayCounter++;
             j++;
-          }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){
+          }else if(','==spiMessageTx_i_dummy[j+3] && spiMessageTx_i_dummy[j] < spiMessageThreshhold){ //If j+2 sign is a comma -> triple digit
             spiMessageTx_i[spiMessageArrayCounter]=(spiMessageTx_i_dummy[j]-48)*100 + (spiMessageTx_i_dummy[j+1]-48)*10 + spiMessageTx_i_dummy[j+2]-48;
             spiMessageArrayCounter++;
             j+=2;
@@ -880,7 +882,7 @@ void setup(void){
   server.onNotFound(notFound);
   server.begin();
 
-  spiMessageTx = &emptyMessage[0];
+  //spiMessageTx = &emptyMessage[0];
   
   digitalWrite(mcuComENPin, HIGH);  //Write SPI CS pin to high again, to show MCU that RFC is ready to work size
 
@@ -912,8 +914,11 @@ void loop(void){
   } else {
     counter++;
   }
-
+  
   spi(spiMessageTx);
+  
+  //delay(5000);
+  
 /*
   //Toggle rfc comen pin to simulate rfc busy/not busy; for testing purposes only
   if(rfcbusynotbusy == 0)
@@ -927,7 +932,6 @@ void loop(void){
     rfcbusynotbusy = 0;
   }
   */
-  delay(5000);
 /*
   if(messageCounter == 0){
     spiMessageTx=firstMessage;
