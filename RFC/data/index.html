@@ -2,7 +2,9 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style> html {display: inline-block;margin: 0px auto;text-align: center;}
+    <style>
+    html
+    {display: inline-block;margin: 0px auto;text-align: center;}
 
     .fixed_footer{
       width: 100%;
@@ -136,12 +138,14 @@
           </form>
           <br>
           <div style="width:50%;margin-left:auto;margin-right:auto;text-align:left;">
-            <p style="align:left">Format for setting intervall requests: <strong>I,PS/CE,Periode,Tabellenplatz</strong> (Bsp.: I,12,20,3)</p>
-            <p style="align:left">Format for reset: <strong>R</strong></p>
-            <p>Use this format to send commands to a specific module:<strong> XY{command} </strong></p>
+            <p>Format for setting intervall requests: <strong>0, LEN, I, PS/CE, Tab.Pl., Periode, MSG,</strong> (Bsp.: 0,10,I,5,1,0,)</p>
+            <p>Periode: 1 bis 255 (entspricht 0,1s bis 25,5s)<strong>R,</strong></p>
+            <p>MSG: (can be send without table place): <strong> LEN, 1, PS/CE, COMMAND_BYTE(s), </strong></p>
+            <p>Format for reset: <strong>R,</strong></p>
+            <p>Log file for SPI communication: <a href='/downloadStatus'><button style="color:black;">Log File</button></a></p>
           </div>
           <br>
-          <h4>Current configuration:</h4>
+          <h4>Current hardware configuration:</h4>
           <br>
           <div style="width:50%;margin-left:auto;margin-right:auto;">
             <table data-toggle="table" data-show-colunns="true">
@@ -156,36 +160,73 @@
                   <th class="text-center">Modul</th>
                   <th class="text-center">PowerS line (PS)</th>
                   <th class="text-center">ComEn line (CE)</th>
-                  <th class="text-center">Frequency</th>
+                  <th class="text-center">PS/CE</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>EPM</td>
-                  <td><span id="lastPSepm">-1</span></td>
-                  <td><span id="lastCEepm">-1</span></td>
-                  <td><span id="frequency1">-1</span> s</td>
+                  <td><span id="lastPSepm">0</span></td>
+                  <td><span id="lastCEepm">0</span></td>
+                  <td><span id="frequency1">0</span></td>
                 </tr>
                 <tr>
                   <td>ODC</td>
                   <td><span id="lastPSodc">-1</span></td>
                   <td><span id="lastCEodc">-1</span></td>
-                  <td><span id="frequency2">-1</span> s</td>
+                  <td><span id="frequency2">-1</span></td>
                 </tr>
                 <tr>
                   <td>TMS</td>
                   <td><span id="lastPStms">-1</span></td>
                   <td><span id="lastCEtms">-1</span></td>
-                  <td><span id="frequency3">-1</span> s</td>
+                  <td><span id="frequency3">-1</span></td>
                 </tr>
                 <tr>
                   <td>PAY</td>
                   <td><span id="lastPSpay">-1</span></td>
                   <td><span id="lastCEpay">-1</span></td>
-                  <td><span id="frequency4">-1</span> s</td>
+                  <td><span id="frequency4">-1</span></td>
                 </tr>
               </tbody>
             </table>
+            <p style="text-align:left;opacity: 0.5;">change configuration in Tab "Configuration"</p>
+            <br>
+            <table data-toggle="table" data-show-colunns="true">
+              <colgroup>
+                <col span="1" style="width: 28%;">
+                <col span="1" style="width: 72%;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="text-center">Table place</th>
+                  <th class="text-center">saved message</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td><span id="tab_pl_1">-1</span></td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td><span id="tab_pl_2">-1</span></td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td><span id="tab_pl_3">-1</span></td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td><span id="tab_pl_4">-1</span></td>
+                </tr>
+                <tr>
+                  <td>5</td>
+                  <td><span id="tab_pl_5">-1</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="text-align:left;opacity: 0.5;">"-1" means no value available</p>
             <br>
             <div class="row2">
               <div class="column2">
@@ -201,7 +242,6 @@
                 <div class="span badge" id="All_stat">OK</div>
               </div>
             </div>
-            <p>If an error show up it can be looked up here: <a href='/downloadStatus'><button style="color:black;">Log File</button></a></p>
             <br>
             <div style="border:2px solid;width:150px;margin-left:auto;margin-right:auto;padding: 10px;border-radius: 20px;">
               <h4>Workload:</h4>
@@ -481,8 +521,8 @@
               <tbody>
                 <tr>
                   <td>EPM</td>
-                  <td><span id="lastPSepm2">-1</span></td>
-                  <td><span id="lastCEepm2">-1</span></td>
+                  <td><span id="lastPSepm2">0</span></td>
+                  <td><span id="lastCEepm2">0</span></td>
                   <td><span id="lastAPIepm2">-</span></td>
                 </tr>
                 <tr>
@@ -524,7 +564,7 @@
                   <tr>      
                     <th></th> 
                     <th class="text-center">PS line</th>
-                    <th class="text-center">ComEn line</th> 
+                    <th class="text-center">ComEn line</th>
                     <th class="text-center">SR</th>
                     <th class="text-center">aI</th>
                     <th class="text-center">SPI</th>
