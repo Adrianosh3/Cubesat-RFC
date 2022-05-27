@@ -432,6 +432,18 @@ void receiveData() {
       f.printf("\n\n");
       numSPIReceived++;
       f.close();
+
+      char consoleReceive[spiLength];
+      for(int i = 0; i <= spiLength; i++)
+      {
+        sprintf(consoleReceive, "%d", spi_slave_rx_buf[i]);
+      }
+
+      writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand1.txt", consoleReceive);
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
