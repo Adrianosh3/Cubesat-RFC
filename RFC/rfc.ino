@@ -7,9 +7,11 @@
 // @hardware: ESP32-DevKitC V4 (ESP32-WROOM-32U)
 // @comments: Can only connect to 2,4 GHz, not to 5 GHz
 //
-// @date:     2022-04-04
+// @date:     2022-27-05
 //
-// @links:    used:
+// @links:    git Repo: https://github.com/Adrianosh3/Cubesat-RFC
+//
+//            used tutorials:
 //            https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
 //            https://randomnerdtutorials.com/esp32-esp8266-input-data-html-form/
 //            https://techtutorialsx.com/2019/06/13/esp8266-spiffs-appending-content-to-file/
