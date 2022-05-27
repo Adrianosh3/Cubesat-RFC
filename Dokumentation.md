@@ -19,7 +19,7 @@
 4. PS (4 bit) + ComEn (4 bit)
 5. Tabellen Platz (0 - 15)
 6. Periode (von 1 bis 255, entspricht 0,1s bis 25,5s)
-7. ###Standard
+7. Standard Datenpaket
 
 ### Sonderpakete
 1. Null
