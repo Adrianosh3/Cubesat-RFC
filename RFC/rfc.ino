@@ -12,6 +12,7 @@
 // @links:    git Repo: https://github.com/Adrianosh3/Cubesat-RFC
 //
 //            used tutorials:
+//            https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
 //            https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
 //            https://randomnerdtutorials.com/esp32-esp8266-input-data-html-form/
 //            https://techtutorialsx.com/2019/06/13/esp8266-spiffs-appending-content-to-file/
