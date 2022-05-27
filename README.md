@@ -1,28 +1,21 @@
 # RFC
-___________________________________________________
-<ins>To do:</ins>
 
-Adrian:
-- Path for 5 measurements per module
-
-Immi:
-- initialization function (frequency setter when initilized)
-___________________________________________________
-
-
-
-___________________________________________________
-Not so important:
+__________________________________________________
+Further possible improvments:
 - Check after initialization if modules are working and show it in Tab "Modules"
 - next to command line choose module configuration (easier command handling)
 - Turn On/Off modules in "Modules" tab
 - Clean up functions 
-- Clean up leftovers from testing
+- Clean up leftovers from testing (console.log etc)
+- initialization function (frequency setter when initilized)
+- Table for MCU table slots (not working)
 ___________________________________________________
 
 
 ___________________________________________________
 <ins>Done:</ins>
+- Terminal prints received and send messages from backend
+- LogStatus file for all handled SPI Communication
 - Send and receive function for every module
 - AvPin auf 1 setzen, wenn RFC rechnet, danach wieder auf 0
 - Initialisierungstabelle für Anschlussart!
