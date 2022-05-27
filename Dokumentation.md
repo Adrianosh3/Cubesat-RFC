@@ -12,6 +12,15 @@
 4. Data0 ... DataN (je 2 Byte)
 5. (CRC)
 
+### Tabellenplatz belegen
+1. 0
+2. LEN
+3. Communication Identifier ("I" für Intervall)
+4. PS (4 bit) + ComEn (4 bit)
+5. Tabellen Platz (0 - 15)
+6. Periode (von 1 bis 255, entspricht 0,1s bis 25,5s)
+7. ###Standard
+
 ### Sonderpakete
 1. Null
 2. LEN (a)
