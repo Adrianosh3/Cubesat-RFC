@@ -9,20 +9,20 @@
 //
 // @date:     2022-04-04
 //
-// @links:    https://randomnerdtutorials.com/esp32-esp8266-plot-chart-web-server/
-//            https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
+// @links:    used:
 //            https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/
 //            https://randomnerdtutorials.com/esp32-esp8266-input-data-html-form/
-//
-//            https://diyprojects.io/esp8266-web-server-part-1-store-web-interface-spiffs-area-html-css-js/#.YOxFhxOA5eg
-//
 //            https://techtutorialsx.com/2019/06/13/esp8266-spiffs-appending-content-to-file/
+//
+//            interesting for future features:
+//            https://randomnerdtutorials.com/esp32-esp8266-plot-chart-web-server/
+//            https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
 //===============================================================
 
 
 
 //===============================================================
-// Header files, variable declarations and WiFi setup
+// Header: imports, variable declarations
 //===============================================================
 
 #include <Arduino.h>
@@ -271,7 +271,7 @@ String testData = "";
 
 
 //===============================================================
-// Function declarations
+// Functions: declarations
 //===============================================================
 
 void ConnectToWiFi() {
@@ -298,12 +298,9 @@ void ConnectToWiFi() {
   return;
 }
 
-
-
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
-
 
 
 String readFile(fs::FS &fs, const char * path){
@@ -359,98 +356,6 @@ void sendCommand() {
   //SPI function to send command
   return;
 }
-
-
-
-void receiveData() {
-    // decide wich configuration and update global variables of that module
-
-    spiLength=spi_slave_rx_buf[0];                                    // Data package length
-    spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
-
-    spiAddressComEn = String((spi_slave_rx_buf[2] & 0b11110000) >> 4);
-    spiAddressPS = String((spi_slave_rx_buf[2] & 0b00001111));
-    String compareConfig = spiAddressPS+spiAddressComEn;
-    spiCRC = spi_slave_rx_buf[2+spiLength+1];
-
-
-    if (conf1 == compareConfig) {
-      //EPM
-
-      EPM1 = String(spi_slave_rx_buf[3] & 0b00000001);
-      EPM2 = String(spi_slave_rx_buf[3] & 0b00000010);
-      EPM3 = String(spi_slave_rx_buf[3] & 0b00000100);
-      EPM4 = String(spi_slave_rx_buf[3] & 0b00001000);
-
-      printf("\nTransfer to Website.\nconf1: %s\n", conf1);
-      //return conf1;
-    } else if (conf2 == compareConfig) {
-      //ODC
-
-      ODC1 = String(spi_slave_rx_buf[11] << 8 | spi_slave_rx_buf[12]);      // Phototransistors
-      ODC2 = String(spi_slave_rx_buf[13] << 8 | spi_slave_rx_buf[14]);      // ^
-      ODC3 = String(spi_slave_rx_buf[15] << 8 | spi_slave_rx_buf[16]);      // ^
-      ODC4 = String(spi_slave_rx_buf[17] << 8 | spi_slave_rx_buf[18]);      // ^
-      ODC5 = String(spi_slave_rx_buf[19] << 8 | spi_slave_rx_buf[20]);      // ^
-      ODC6 = String(spi_slave_rx_buf[21] << 8 | spi_slave_rx_buf[22]);      // ^
-      ODC7 = String(spi_slave_rx_buf[7] << 24 | spi_slave_rx_buf[8] << 16 | spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);      // Runtime
-      
-
-      printf("\nTransfer to Website.\nconf2: %s\n", conf2);
-      //return conf2;
-    } else if (conf3 == compareConfig) {
-      //TMS
-
-      TMS1 = String(spi_slave_rx_buf[3] << 8 | spi_slave_rx_buf[4]);
-      TMS2 = String(spi_slave_rx_buf[5] << 8 | spi_slave_rx_buf[6]);
-      TMS3 = String(spi_slave_rx_buf[7] << 8 | spi_slave_rx_buf[8]);
-      TMS4 = String(spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);
-
-      printf("\nTransfer to Website.\nconf3: %s\n", conf3);
-      //return conf3;
-    } else if (conf4 == compareConfig) {
-      //PAY
-
-      printf("\nNo payload installed.");
-      //return conf4;
-    } else if (compareConfig == "69"){                                                   
-      // if SPI receive function is an error message compareConfig = "E" = "69"
-      File f = SPIFFS.open("/logStatus.txt", "a");
-      time_t t = now();
-      f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, spiTransactionCounter, hour(t), minute(t), second(t));
-      numError++;
-      f.close();
-    } else if (!(spiLength == 0 && spiCI == 1)){
-      // if SPI receive function is not a dummy message (0 1 0 0 ...)
-      File f = SPIFFS.open("/logStatus.txt", "a");
-      time_t t = now();
-      f.printf("Received SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPIReceived, spiTransactionCounter, hour(t), minute(t), second(t));
-      for(int i = 0; i <= spiLength; i++)
-      {
-        f.printf("%d ", spi_slave_rx_buf[i]);
-      }
-      f.printf("\n\n");
-      numSPIReceived++;
-      f.close();
-
-      char consoleReceive[spiLength];
-      for(int i = 0; i <= spiLength; i++)
-      {
-        sprintf(consoleReceive, "%d", spi_slave_rx_buf[i]);
-      }
-
-      writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
-      writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
-      writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
-      writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
-      writeFile(SPIFFS, "/inCommand1.txt", consoleReceive);
-    } else {
-      printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
-    }
-    
-}
-
-
 
 void spi(uint8_t *spiParam){
 
@@ -525,7 +430,93 @@ void spi(uint8_t *spiParam){
     
 }
 
+void receiveData() {
+    // decide wich configuration and update global variables of that module
 
+    spiLength=spi_slave_rx_buf[0];                                    // Data package length
+    spiCI=spi_slave_rx_buf[1];                                        // Communication Identifier
+
+    spiAddressComEn = String((spi_slave_rx_buf[2] & 0b11110000) >> 4);
+    spiAddressPS = String((spi_slave_rx_buf[2] & 0b00001111));
+    String compareConfig = spiAddressPS+spiAddressComEn;
+    spiCRC = spi_slave_rx_buf[2+spiLength+1];
+
+
+    if (conf1 == compareConfig) {
+      //EPM
+
+      EPM1 = String(spi_slave_rx_buf[3] & 0b00000001);
+      EPM2 = String(spi_slave_rx_buf[3] & 0b00000010);
+      EPM3 = String(spi_slave_rx_buf[3] & 0b00000100);
+      EPM4 = String(spi_slave_rx_buf[3] & 0b00001000);
+
+      printf("\nTransfer to Website.\nconf1: %s\n", conf1);
+      //return conf1;
+    } else if (conf2 == compareConfig) {
+      //ODC
+
+      ODC1 = String(spi_slave_rx_buf[11] << 8 | spi_slave_rx_buf[12]);      // Phototransistors
+      ODC2 = String(spi_slave_rx_buf[13] << 8 | spi_slave_rx_buf[14]);      // ^
+      ODC3 = String(spi_slave_rx_buf[15] << 8 | spi_slave_rx_buf[16]);      // ^
+      ODC4 = String(spi_slave_rx_buf[17] << 8 | spi_slave_rx_buf[18]);      // ^
+      ODC5 = String(spi_slave_rx_buf[19] << 8 | spi_slave_rx_buf[20]);      // ^
+      ODC6 = String(spi_slave_rx_buf[21] << 8 | spi_slave_rx_buf[22]);      // ^
+      ODC7 = String(spi_slave_rx_buf[7] << 24 | spi_slave_rx_buf[8] << 16 | spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);      // Runtime
+
+
+      printf("\nTransfer to Website.\nconf2: %s\n", conf2);
+      //return conf2;
+    } else if (conf3 == compareConfig) {
+      //TMS
+
+      TMS1 = String(spi_slave_rx_buf[3] << 8 | spi_slave_rx_buf[4]);
+      TMS2 = String(spi_slave_rx_buf[5] << 8 | spi_slave_rx_buf[6]);
+      TMS3 = String(spi_slave_rx_buf[7] << 8 | spi_slave_rx_buf[8]);
+      TMS4 = String(spi_slave_rx_buf[9] << 8 | spi_slave_rx_buf[10]);
+
+      printf("\nTransfer to Website.\nconf3: %s\n", conf3);
+      //return conf3;
+    } else if (conf4 == compareConfig) {
+      //PAY
+
+      printf("\nNo payload installed.");
+      //return conf4;
+    } else if (compareConfig == "69"){
+      // if SPI receive function is an error message compareConfig = "E" = "69"
+      File f = SPIFFS.open("/logStatus.txt", "a");
+      time_t t = now();
+      f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, spiTransactionCounter, hour(t), minute(t), second(t));
+      numError++;
+      f.close();
+    } else if (!(spiLength == 0 && spiCI == 1)){
+      // if SPI receive function is not a dummy message (0 1 0 0 ...)
+      File f = SPIFFS.open("/logStatus.txt", "a");
+      time_t t = now();
+      f.printf("Received SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPIReceived, spiTransactionCounter, hour(t), minute(t), second(t));
+      for(int i = 0; i <= spiLength; i++)
+      {
+        f.printf("%d ", spi_slave_rx_buf[i]);
+      }
+      f.printf("\n\n");
+      numSPIReceived++;
+      f.close();
+
+      char consoleReceive[spiLength];
+      for(int i = 0; i <= spiLength; i++)
+      {
+        sprintf(consoleReceive, "%d", spi_slave_rx_buf[i]);
+      }
+
+      writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand1.txt", consoleReceive);
+    } else {
+      printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
+    }
+
+}
 
 //Not working anymore/yet
 void mcuLoad(uint8_t actualStatus){
@@ -547,15 +538,6 @@ void mcuLoad(uint8_t actualStatus){
 
   printf("\n mcuLoad: %s\n", mcu_load);
 }
-
-void set_buffer() {
-    for (uint32_t i = 0; i < BUFFER_SIZE; i++) {
-        spi_slave_tx_buf[i] = i & 0xFF;
-    }
-    memset(spi_slave_rx_buf, 0, BUFFER_SIZE);
-}
-
-
 
 //===============================================================
 // Setup
