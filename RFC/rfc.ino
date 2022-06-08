@@ -51,10 +51,10 @@
 //const char* ssid = "DemoSat"; //WiFi SSID
 //const char* password = "123456789"; //WiFi password
 //For Wi-Fi from uni
-//const char* ssid = "DemoSat-WLAN"; //WiFi SSID
-//const char* password = "24337243"; //WiFi password
-const char* ssid = "Apartment 322"; //WiFi SSID
-const char* password = "06456469822825645048"; //WiFi password
+const char* ssid = "DemoSat-WLAN"; //WiFi SSID
+const char* password = "24337243"; //WiFi password
+//const char* ssid = "Apartment 322"; //WiFi SSID
+//const char* password = "06456469822825645048"; //WiFi password
 
 const char* http_username = "admin";  // username for website-login
 const char* http_password = "admin";  // password for website-login
@@ -496,7 +496,7 @@ void receiveData() {
       File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Received SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPIReceived, spiTransactionCounter, hour(t), minute(t), second(t));
-      for(int i = 0; i <= spiLength; i++)
+      for(int i = 0; i <= 10; i++)
       {
         f.printf("%d ", spi_slave_rx_buf[i]);
       }
