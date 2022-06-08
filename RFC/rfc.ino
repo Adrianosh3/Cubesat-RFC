@@ -301,7 +301,7 @@ void spi(uint8_t *spiParam){
       spi_slave_tx_buf = spiParam;
     }
 
-    /*  
+/*
     //Print spiMessageTx, for testing purposes only
     Serial.println("\nspiMessageTx: ");
     for(int g=0; g<10; g++)
@@ -339,7 +339,7 @@ void spi(uint8_t *spiParam){
       slave.yield();
       printf("\nSlave remained.\n");
     }
-    
+
     //For testing purposes
     printf("\nTransaction number: %d\n", spiTransactionCounter);
     spiTransactionCounter++;
@@ -693,6 +693,7 @@ void setup(void){
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
       writeFile(SPIFFS, "/inCommand1.txt", inputMessage.c_str());
       spiMessageTx_str = readFile(SPIFFS, ("/inCommand1.txt"));
+
       File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Sent SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPISent, spiTransactionCounter, hour(t), minute(t), second(t));
@@ -703,31 +704,32 @@ void setup(void){
       //Don't process received data first time, since website sends start message, which has not to be converted
       //if (spiMessageTx_str != "File system ready!") {
       if ( counterMessagesSent > 0) {
-        spiMessageTx_s = spiMessageTx_str.c_str();      
+        spiMessageTx_s = spiMessageTx_str.c_str();
             
         //For testing of data conversion only
+        /*
         Serial.println("spiMessageTx_s");
         Serial.println(spiMessageTx_s);
         Serial.println("testnachricht");
         Serial.println(testnachricht);
-        
-        
+        */
+
         spiMessageTx_cp = strdup(spiMessageTx_s);  //convert const char* to char*
 
         //For testing of data conversion only
-        Serial.println("spiMessageTx_cp");
-        Serial.println(spiMessageTx_cp);
+        //Serial.println("spiMessageTx_cp");
+        //Serial.println(spiMessageTx_cp);
 
-        printf("\nStart of conversion.\n");  //For testing of data conversion only
-        printf("First for loop.\n");  //For testing of data conversion only
+        //printf("\nStart of conversion.\n");  //For testing of data conversion only
+        //printf("First for loop.\n");  //For testing of data conversion only
         
         for(int j=0; j<256; j++){
           spiMessageTx_c[j]=*spiMessageTx_cp++;
           spiMessageTx_i_dummy[j]=(int)spiMessageTx_c[j];
-          printf("%d ", spiMessageTx_i_dummy[j]);
+          //printf("%d ", spiMessageTx_i_dummy[j]); //For testing of data conversion only
         }
-          
-        printf("\n\nSecond for loop.\n");  //For testing of data conversion only
+
+        //printf("\n\nSecond for loop.\n");  //For testing of data conversion only
 
         //Conversion only handles entries without "space" and if bytes are seperated with a comma
         for(int j=0; j<256; j++)
@@ -760,27 +762,28 @@ void setup(void){
         
         spiMessageArrayCounter=0;
         
-        printf("\nThird for loop.\n");  //For testing of data conversion only
+        //printf("\nThird for loop.\n");  //For testing of data conversion only
         
         for (int i = 0; i < 256; ++i) {
           spiMessageTx_ui[i] = (int) spiMessageTx_i[i];
         }
-        
+        /*
         for(int g=0; g<5; g++)
         {
           printf("%d %d ", g, spiMessageTx_ui[g]);
         }
-
+        */
         spiMessageTx = &spiMessageTx_ui[0];   //Final assignment of final variable for spi transaction
 
         //Printing converted value, which was received from website (for testing)
+        /*
         Serial.println("spiMessageTx: ");
         for(int g=0; g<10; g++)
         {
           printf("%p ", spiMessageTx[g]);
         }
-
-        printf("\nEnd of conversion.\n");
+        */
+        //printf("\nEnd of conversion.\n");
 
       }
       counterMessagesSent=1;  //First message (start message from website) has been sent
