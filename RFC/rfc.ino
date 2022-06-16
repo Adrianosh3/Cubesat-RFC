@@ -151,17 +151,17 @@ int busy = 0;   //?Used only one time in receiveData()? -> Adrian
 
 int rfcbusynotbusy = 0;
      
-char spiMessageTx_c[256]= { 0 }
+char spiMessageTx_c[256]= { 0 };
+   
+int spiMessageTx_i_dummy[256]= { 0 };
     
-int spiMessageTx_i_dummy[256]= { 0 }
-    
-uint8_t spiMessageTx_ui[256]= { 0 }
+uint8_t spiMessageTx_ui[256]= { 0 };
 
 //Should be sent to MCU in first transaction
-uint8_t startMessage[256] = {0, 3, 83}
+uint8_t startMessage[256] = {0, 3, 83};
 
 //Should be sent if there is no new message to be sent
-uint8_t emptyMessage[256] = {0, 1}
+uint8_t emptyMessage[256] = {0, 1};
 
 
 //For testing purposes only
@@ -415,37 +415,57 @@ void receiveData() {
 
       printf("\nNo payload installed.");
       //return conf4;
-    } else if (compareConfig == "69"){
+    } else if (spi_slave_rx_buf[2] == 69){
       // if SPI receive function is an error message compareConfig = "E" = "69"
       File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Error %d : Transaction: %d  (%d:%d:%d)\n", numError, spiTransactionCounter, hour(t), minute(t), second(t));
+      for(int i = 0; i <= 20; i++)
+      {
+        f.printf("%d ", spi_slave_rx_buf[i]);
+      }
+      f.printf("\n\n");
       numError++;
       f.close();
+      
+      File f2 = SPIFFS.open("/temp.txt", "w");
+      for(int i = 0; i <= 20; i++)
+      {
+        f2.printf("%d ", spi_slave_rx_buf[i]);
+      }
+      f2.close();
+
+      writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
+      writeFile(SPIFFS, "/inCommand1.txt", (readFile(SPIFFS, "/temp.txt").c_str()));
+      
     } else if (!(spiLength == 0 && spiCI == 1)){
       // if SPI receive function is not a dummy message (0 1 0 0 ...)
       File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Received SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPIReceived, spiTransactionCounter, hour(t), minute(t), second(t));
-      for(int i = 0; i <= 10; i++)
+      for(int i = 0; i <= 20; i++)
       {
         f.printf("%d ", spi_slave_rx_buf[i]);
       }
       f.printf("\n\n");
       numSPIReceived++;
       f.close();
-
-      char consoleReceive[spiLength];
-      for(int i = 0; i <= spiLength; i++)
+      
+      File f2 = SPIFFS.open("/temp.txt", "w");
+      for(int i = 0; i <= 20; i++)
       {
-        sprintf(consoleReceive, "%d", spi_slave_rx_buf[i]);
+        f2.printf("%d ", spi_slave_rx_buf[i]);
       }
+      f2.close();
 
       writeFile(SPIFFS, "/inCommand5.txt", (readFile(SPIFFS, "/inCommand4.txt").c_str()));
       writeFile(SPIFFS, "/inCommand4.txt", (readFile(SPIFFS, "/inCommand3.txt").c_str()));
       writeFile(SPIFFS, "/inCommand3.txt", (readFile(SPIFFS, "/inCommand2.txt").c_str()));
       writeFile(SPIFFS, "/inCommand2.txt", (readFile(SPIFFS, "/inCommand1.txt").c_str()));
-      writeFile(SPIFFS, "/inCommand1.txt", consoleReceive);
+      writeFile(SPIFFS, "/inCommand1.txt", (readFile(SPIFFS, "/temp.txt").c_str()));
     } else {
       printf("\nHat nicht funktioniert.\ncompareConfig: %s\n", compareConfig);
     }
@@ -498,10 +518,13 @@ void setup(void){
   }
 
   // Header for SPIFFS Files
-  const char* header1 = "Log File Temperature\n";
-  const char* header2 = "Log File Altitude\n";
-  const char* header3 = "Log File Pressure\n";
-  const char* header4 = "Log File Status\n";
+  const char* header1 = "Log File Temperature\n\n";
+  const char* header2 = "Log File Altitude\n\n";
+  const char* header3 = "Log File Pressure\n\n";
+  const char* header4 = "Log File Status\n\n";
+  const char* temporary = "temp\n";
+   
+  writeFile(SPIFFS, "/temp.txt", temporary);
   writeFile(SPIFFS, "/logT.txt", header1);
   writeFile(SPIFFS, "/logA.txt", header2);
   writeFile(SPIFFS, "/logP.txt", header3);
@@ -697,7 +720,7 @@ void setup(void){
       File f = SPIFFS.open("/logStatus.txt", "a");
       time_t t = now();
       f.printf("Sent SPI message %d : Transaction %d  (%d:%d:%d)\n", numSPISent, spiTransactionCounter, hour(t), minute(t), second(t));
-      f.printf("%s\n", spiMessageTx_str.c_str());
+      f.printf("%s\n\n", spiMessageTx_str.c_str());
       numSPISent++;
       f.close();
       
