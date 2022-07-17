@@ -1,5 +1,5 @@
 //===============================================================
-// @file:     GroundControl_V2.0
+// @file:     rfc.ino
 // @brief:    Communication CubeSat - Ground Control
 //
 // @authors:  Adrian Setka, Immanuel Weule
@@ -7,7 +7,7 @@
 // @hardware: ESP32-DevKitC V4 (ESP32-WROOM-32U)
 // @comments: Can only connect to 2,4 GHz, not to 5 GHz
 //
-// @date:     2022-27-05
+// @date:     2022-08-06
 //
 // @links:    git Repo: https://github.com/Adrianosh3/Cubesat-RFC
 //
@@ -205,7 +205,7 @@ String testData = "";
 
 
 //===============================================================
-// Functions: declarations
+// Functions
 //===============================================================
 
 void ConnectToWiFi() {
@@ -702,7 +702,7 @@ void setup(void){
       request->send(SPIFFS, "/logStatus.txt", "text/text", true);
   });
 
-  //Send a GET request to <ESP_IP>/get?inputString=<inputMessage>
+  //Interact with Terminal on Website
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
     if(!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
