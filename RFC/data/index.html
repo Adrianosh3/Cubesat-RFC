@@ -653,15 +653,29 @@
     
     <script>
 
+      // INITIALISATION
       // function to test spiffs connection
       function sendTestFunction() {
         document.getElementById("dynForm").submit();
+      }
+
+      window.onload = function exampleFunction() {
+        setTimeout(function ( ) {
+          sendTestFunction()
+          setTimeout(function ( ) {
+            submitMessage();
+            }, 1000);
+          }, 2000);
+          setTimeout(function ( ) {
+            submitMessage2();
+        }, 2000);
       }
       
       var modules = ['epm', 'odc', 'tms', 'pay'];
       var num = ['1', '2', '3', '4', '5'];
 
-      //SPIFFS save function and update for command line interface
+      // SUBMIT MESSAGE
+      // SPIFFS save function and update for command line interface
       function submitMessage() {
         //alert("Saved value to ESP SPIFFS");
         // Function for showing last command
@@ -684,6 +698,7 @@
         }, 500);
       }
 
+      // SUBMIT MESSAGE2
       //SPIFFS save function and update the config on website
       function submitMessage2() {
         setTimeout(function ( ) {
@@ -729,7 +744,7 @@
         }, 3500);
       }
       
-      // Change current theme
+      // THEME SELECTION
       // Adapted from : https://wdtz.org/bootswatch-theme-selector.html
       var supports_storage = supports_html5_storage();
       if (supports_storage) {
@@ -778,7 +793,7 @@
         }
       }
       
-    // Charts and tables updating sensordata
+    // CHARTS and tables updating sensordata
     var chartT = new Highcharts.Chart({
       chart:{ renderTo : 'chart-temperature' },
       title: { text: 'BME280 Temperature' },
@@ -959,7 +974,7 @@
       xhttp.send();
     }, 20000 ) ;
 
-    // Workload call 
+    // WORKLOAD CALL
     setInterval(function ( ) {
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
@@ -972,8 +987,9 @@
       xhttp.send();
     }, 5000 ) ;
 
-    //function to show all last values that are not plotted in graphs
-    //update 0 to 3 when all modules are implemented and are needed to work (testing purpose limited to modul 2:tms)
+    // GET VALUES
+    // function to show all last values that are not plotted in graphs
+    // update 0 to 3 when all modules are implemented and are needed to work (testing purpose limited to modul 2:tms)
     setInterval(function ( ) {
       
       var dt = new Date();
@@ -1057,20 +1073,9 @@
       };
     }, 5000);
 
+
     
-    window.onload = function exampleFunction() {
-      setTimeout(function ( ) {
-        sendTestFunction()
-        setTimeout(function ( ) {
-          submitMessage();
-          }, 1000);  
-        }, 2000);  
-        setTimeout(function ( ) {
-          submitMessage2();
-      }, 2000);  
-    }
-    
-    // Modul Buttons 
+    // BUTTONS
     document.getElementById("M1_On").addEventListener("click", function() {
       document.getElementById("M1_stat").innerHTML = "ON";
     });
